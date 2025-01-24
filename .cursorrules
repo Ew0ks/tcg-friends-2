@@ -1,0 +1,31 @@
+## Règles générales
+    - On utilise au maximum les bonnes pratiques de Javascript
+    - On utilise au maximum les bonnes pratiques de Typescript
+    - On utilise au maximum les bonnes pratiques de React
+    - On utilise au maximum les bonnes pratiques de Next.js
+    - On utilise au maximum les bonnes pratiques de TailwindCSS
+    - On utilise au maximum les bonnes pratiques de Prisma
+    - On utilise au maximum les bonnes pratiques de NextAuth
+
+## Règles Typescript
+    - On utilise l'immutabilité
+    - On code en déclaratif
+
+## Scope du projet
+    - On utilise NextAuth pour la gestion des utilisateurs
+    - On utilise Prisma pour la gestion des données
+    - On utilise TailwindCSS pour le design
+    - On utilise Shadcn/UI pour les composants
+    - On utilise Next.js pour le serveur
+    - On utilise Next.js pour le client
+
+## Description du projet
+    - L'application est une ébauche de TCG (Trading Card Game)
+    - On peut dépenser des crédits pour acheter des boosters
+    - Il existe 4 niveau de rareté de carte : Commune, Peu Commune, Rare, Légendaire
+    - Il existe 3 types de boosters : 
+        - 4 cartes dont au moins une peu commune (100 crédits)
+        - 4 cartes dont au moins une rare (170 crédits)
+        - 1 carte légendaire (500 crédits)
+    - Certaines cartes existent en version Shiny
+    - Chaque carte a un bloc description, un bloc quote facultatif et un bloc power

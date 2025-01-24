@@ -1,0 +1,89 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Rarity {
+  COMMON
+  UNCOMMON
+  RARE
+  LEGENDARY
+}
+
+enum BoosterType {
+  STANDARD
+  RARE
+  LEGENDARY
+}
+
+model User {
+  id                 Int               @id @default(autoincrement())
+  username           String            @unique
+  password           String
+  credits            Int               @default(0)
+  collectedCards     CollectedCard[]
+  boosterPurchases   BoosterPurchase[]
+  totalBoostersOpened Int              @default(0)
+  legendaryCardsFound Int              @default(0)
+  shinyCardsFound    Int              @default(0)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model Card {
+  id             Int               @id @default(autoincrement())
+  name           String
+  rarity         Rarity
+  description    String?
+  quote          String?
+  power          Int
+  imageUrl       String            @default("/images/cards/default.jpg")
+  collectedCards CollectedCard[]
+  boosterCards   CardFromBooster[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model CollectedCard {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  cardId    Int
+  quantity  Int      @default(1)
+  isShiny   Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
+  card      Card     @relation(fields: [cardId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([userId, cardId, isShiny])
+}
+
+model BoosterPurchase {
+  id        Int               @id @default(autoincrement())
+  userId    Int
+  user      User             @relation(fields: [userId], references: [id])
+  type      BoosterType
+  cost      Int
+  createdAt DateTime @default(now())
+  cards     CardFromBooster[]
+}
+
+model CardFromBooster {
+  id        Int      @id @default(autoincrement())
+  boosterId Int
+  cardId    Int
+  isShiny   Boolean  @default(false)
+  booster   BoosterPurchase @relation(fields: [boosterId], references: [id])
+  card      Card     @relation(fields: [cardId], references: [id])
+}
+
+model BoosterConfig {
+  id          Int         @id @default(autoincrement())
+  type        BoosterType @unique
+  cost        Int
+  cardCount   Int
+  updatedAt   DateTime    @updatedAt
+}

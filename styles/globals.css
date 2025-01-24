@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ajoutez des styles globaux supplémentaires ici */
+body {
+  @apply bg-game-dark text-game-text;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-bold;
+}
+
+p {
+  @apply mb-4;
+}
+
+@layer components {
+  .game-card {
+    @apply bg-game-light rounded-lg shadow-game p-4 transition-all duration-300 hover:shadow-lg hover:scale-105;
+  }
+
+  .game-button {
+    @apply px-4 py-2 bg-game-accent text-white rounded-md hover:bg-opacity-80 transition-all duration-300;
+  }
+
+  .game-input {
+    @apply bg-game-light border border-game-muted rounded-md p-2 text-game-text focus:outline-none focus:ring-2 focus:ring-game-accent;
+  }
+}
+
+@keyframes shine {
+  0% {
+    border-color: rgba(250, 204, 21, 0.4);
+  }
+  50% {
+    border-color: rgba(250, 204, 21, 1);
+  }
+  100% {
+    border-color: rgba(250, 204, 21, 0.4);
+  }
+}
+
+.animate-shine {
+  animation: shine 2s infinite;
+}
