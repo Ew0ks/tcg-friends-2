@@ -6,9 +6,16 @@ import Card from '../components/Card';
 interface CollectedCard {
   id: number;
   card: {
+    id: number;
     name: string;
-    isShiny: boolean;
+    rarity: string;
+    description: string;
+    quote?: string;
+    power: number;
+    imageUrl: string;
   };
+  isShiny: boolean;
+  isNew: boolean;
   quantity: number;
 }
 
@@ -41,6 +48,35 @@ const Collection: React.FC = () => {
     }
   }, [user]);
 
+  const handleCardHover = async (cardId: number, isShiny: boolean) => {
+    if (!user) return;
+
+    try {
+      await fetch('/api/collection/mark-as-seen', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          cardId,
+          isShiny,
+        }),
+      });
+
+      // Mettre à jour l'état local
+      setCollectedCards(cards =>
+        cards.map(card =>
+          card.card.id === cardId && card.isShiny === isShiny
+            ? { ...card, isNew: false }
+            : card
+        )
+      );
+    } catch (error) {
+      console.error('Erreur lors du marquage de la carte comme vue:', error);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Stats de collection */}
@@ -66,8 +102,10 @@ const Collection: React.FC = () => {
             key={`${collectedCard.card.id}-${collectedCard.isShiny}`}
             {...collectedCard.card}
             isShiny={collectedCard.isShiny}
+            isNew={collectedCard.isNew}
             quantity={collectedCard.quantity}
             className="hover:scale-105 transition-transform"
+            onHover={() => handleCardHover(collectedCard.card.id, collectedCard.isShiny)}
           />
         ))}
       </div>

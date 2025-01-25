@@ -221,7 +221,7 @@ async function generateBoosterCards(type: BoosterType): Promise<GeneratedCard[]>
   }
 
   // Récupérer la carte garantie
-  const guaranteedCard = await prisma.card.findFirst({
+  const cards = await prisma.card.findMany({
     where: {
       rarity: guaranteedRarity,
     },
@@ -235,9 +235,12 @@ async function generateBoosterCards(type: BoosterType): Promise<GeneratedCard[]>
     },
   });
 
-  if (!guaranteedCard) {
+  if (!cards || cards.length === 0) {
     throw new Error(`No card found with rarity ${guaranteedRarity}`);
   }
+
+  // Sélectionner une carte aléatoire
+  const guaranteedCard = cards[Math.floor(Math.random() * cards.length)];
 
   const result: GeneratedCard[] = [{
     id: guaranteedCard.id,

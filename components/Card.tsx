@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Rarity } from '@prisma/client';
 
 export interface CardProps {
@@ -9,9 +9,11 @@ export interface CardProps {
   quote?: string;
   power: number;
   isShiny: boolean;
+  isNew?: boolean;
   imageUrl: string;
   quantity?: number;
   className?: string;
+  onHover?: () => void;
 }
 
 const Card: React.FC<CardProps> = ({
@@ -21,19 +23,44 @@ const Card: React.FC<CardProps> = ({
   quote,
   power,
   isShiny,
+  isNew = false,
   imageUrl,
   quantity,
   className = '',
+  onHover,
 }) => {
+  const [hasHovered, setHasHovered] = useState(false);
+
+  const handleMouseEnter = () => {
+    if (isNew && !hasHovered && onHover) {
+      setHasHovered(true);
+      onHover();
+    }
+  };
+
   return (
     <div
       className={`
         relative w-64 h-96 p-4 rounded-lg border-2
         ${isShiny ? 'animate-shine border-yellow-400' : 'border-game-muted'}
         ${getRarityStyle(rarity)}
+        ${isNew && !hasHovered ? 'animate-pulse' : ''}
         ${className}
       `}
+      onMouseEnter={handleMouseEnter}
     >
+      {/* Badge "Nouveau" */}
+      {isNew && !hasHovered && (
+        <div className="absolute -top-3 -left-3 bg-game-success text-game-dark text-xs font-bold px-2 py-1 rounded-full transform -rotate-12 shadow-lg border border-game-dark">
+          NOUVEAU !
+        </div>
+      )}
+
+      {/* Bulle de puissance */}
+      <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-game-accent flex items-center justify-center border-2 border-game-dark shadow-lg">
+        <span className="text-lg font-bold text-game-dark">{power}</span>
+      </div>
+
       <div className="w-full h-40 mb-2 overflow-hidden rounded-lg">
         <img
           src={imageUrl}
@@ -44,9 +71,9 @@ const Card: React.FC<CardProps> = ({
 
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-lg font-bold">{name}</h3>
-        <span className={`text-sm ${isShiny ? 'text-yellow-400' : 'text-game-muted'}`}>
-          {isShiny ? '✨ Shiny' : rarity}
-        </span>
+        {isShiny && (
+          <span className="text-sm text-yellow-400">✨ Shiny</span>
+        )}
       </div>
 
       <p className="text-sm mb-2 h-16 overflow-y-auto">{description}</p>
@@ -58,12 +85,14 @@ const Card: React.FC<CardProps> = ({
       )}
 
       <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center">
-        <span className="text-game-accent">Power: {power}</span>
         {quantity && (
           <span className="text-game-success">
             x{quantity}
           </span>
         )}
+        <span className={`text-xs ${getRarityTextColor(rarity)}`}>
+          {rarity}
+        </span>
       </div>
     </div>
   );
@@ -79,6 +108,19 @@ const getRarityStyle = (rarity: Rarity) => {
       return 'bg-gradient-to-br from-green-900 to-game-dark';
     default:
       return 'bg-game-dark';
+  }
+};
+
+const getRarityTextColor = (rarity: Rarity) => {
+  switch (rarity) {
+    case 'LEGENDARY':
+      return 'text-purple-400';
+    case 'RARE':
+      return 'text-blue-400';
+    case 'UNCOMMON':
+      return 'text-green-400';
+    default:
+      return 'text-gray-400';
   }
 };
 
