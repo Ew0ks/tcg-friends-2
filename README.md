@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TCG Friends
 
-## Getting Started
+Un jeu de cartes à collectionner (Trading Card Game) développé avec Next.js, Prisma et PostgreSQL.
 
-First, run the development server:
+## Prérequis
 
+- Node.js (v18 ou supérieur)
+- PostgreSQL (v14 ou supérieur)
+- npm ou yarn
+
+## Installation
+
+1. **Cloner le projet**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/votre-username/tcg-friends-2.git
+cd tcg-friends-2
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Installer les dépendances**
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Configuration de PostgreSQL**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Démarrer PostgreSQL :
+```bash
+brew services start postgresql@14
+```
 
-## Learn More
+- Créer l'utilisateur PostgreSQL et lui donner les droits :
+```bash
+createuser postgres --createdb --superuser
+psql postgres -c "ALTER USER postgres WITH PASSWORD 'admin';"
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Configuration de la base de données**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Créer un fichier `.env` à la racine du projet :
+```env
+DATABASE_URL="postgresql://postgres:admin@localhost:5432/tcg-friends-2?schema=public"
+JWT_SECRET="votre-secret-jwt"
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Créer la base de données :
+```bash
+createdb tcg-friends-2
+```
 
-## Deploy on Vercel
+5. **Initialiser la base de données**
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+6. **Initialiser les données de test**
+```bash
+npm run prisma:seed
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Cela va créer :
+- Un utilisateur admin (username: admin, password: admin)
+- Un utilisateur test (username: test, password: test)
+- Les configurations de boosters
+- Quelques cartes de test
+
+## Développement
+
+1. **Démarrer le serveur de développement**
+```bash
+npm run dev
+```
+
+2. **Accéder à l'application**
+- Frontend : [http://localhost:3000](http://localhost:3000)
+- Prisma Studio : [http://localhost:5555](http://localhost:5555) (après avoir exécuté `npx prisma studio`)
+
+## Structure du projet
+
+```
+├── app/                  # Pages et routes Next.js
+├── prisma/              # Configuration Prisma et schéma de base de données
+├── public/              # Fichiers statiques
+└── src/
+    ├── components/      # Composants React réutilisables
+    ├── context/         # Contextes React (Auth, etc.)
+    └── styles/          # Fichiers CSS et styles
+```
+
+## Fonctionnalités
+
+- Système d'authentification
+- Gestion des utilisateurs (rôles USER et ADMIN)
+- Système de boosters avec différentes raretés
+- Collection de cartes
+- Cartes Shiny
+- Système de crédits
+
+## Commandes utiles
+
+- **Lancer Prisma Studio** :
+```bash
+npx prisma studio
+```
+
+- **Mettre à jour le schéma de la base de données** :
+```bash
+npx prisma db push
+```
+
+- **Réinitialiser la base de données** :
+```bash
+npx prisma db push --force-reset
+```
+
+## En cas de problème
+
+1. **La base de données ne démarre pas**
+```bash
+brew services restart postgresql@14
+```
+
+2. **Erreurs de Prisma**
+```bash
+npx prisma generate
+```
+
+3. **Réinitialiser complètement la base de données**
+```bash
+brew services restart postgresql@14
+dropdb tcg-friends-2
+createdb tcg-friends-2
+npx prisma db push
+```

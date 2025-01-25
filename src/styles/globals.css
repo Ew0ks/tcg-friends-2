@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ajoutez des styles globaux supplémentaires ici */
+body {
+  @apply bg-game-dark text-game-text;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-bold;
+}
+
+p {
+  @apply mb-4;
+}
+
+@layer components {
+  .game-card {
+    @apply bg-game-light rounded-lg shadow-game p-4 transition-all duration-300 hover:shadow-lg hover:scale-105;
+  }
+
+  .game-button {
+    @apply px-4 py-2 bg-game-accent text-white rounded-md hover:bg-opacity-80 transition-all duration-300;
+  }
+
+  .game-input {
+    @apply bg-game-light border border-game-muted rounded-md p-2 text-game-text focus:outline-none focus:ring-2 focus:ring-game-accent;
+  }
+}
+
+@keyframes shine {
+  0% {
+    border-color: rgba(250, 204, 21, 0.4);
+  }
+  50% {
+    border-color: rgba(250, 204, 21, 1);
+  }
+  100% {
+    border-color: rgba(250, 204, 21, 0.4);
+  }
+}
+
+.animate-shine {
+  animation: shine 2s infinite;
+}
+
+/* Effet de brillance pour les cartes shiny */
+.card-shiny {
+  position: relative;
+  background-repeat: no-repeat;
+  background-position: -120px -120px, 0 0;
+  
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.2) 37%,
+    rgba(255, 255, 255, 0.8) 45%,
+    rgba(255, 255, 255, 0.0) 50%
+  ), var(--card-rarity-gradient);
+  
+  background-size: 250% 250%, 100% 100%;
+  transition: all 0.3s ease-out;
+}
+
+.card-shiny:hover {
+  background-position: 0 0, 0 0;
+}
+
+/* Classes de base pour toutes les cartes */
+.card-base {
+  transform: scale(1);
+  transition: all 0.3s ease-out;
+}
+
+.card-base:hover {
+  transform: scale(1.05);
+}
+
+/* Gradients de rareté */
+.rarity-legendary {
+  --card-rarity-gradient: linear-gradient(to bottom right, #4c1d95, #1f2937);
+  background: var(--card-rarity-gradient);
+}
+
+.rarity-rare {
+  --card-rarity-gradient: linear-gradient(to bottom right, #1e3a8a, #1f2937);
+  background: var(--card-rarity-gradient);
+}
+
+.rarity-uncommon {
+  --card-rarity-gradient: linear-gradient(to bottom right, #065f46, #1f2937);
+  background: var(--card-rarity-gradient);
+}
+
+.rarity-common {
+  --card-rarity-gradient: linear-gradient(to bottom right, #1f2937, #1f2937);
+  background: var(--card-rarity-gradient);
+}
