@@ -23,6 +23,12 @@ const SHINY_CHANCE = 0.05;
 
 // Fonction pour déterminer une rareté aléatoire
 function getRandomRarity(minRarity?: Rarity): Rarity {
+  // Si c'est un booster légendaire, utiliser une logique spéciale
+  if (minRarity === Rarity.LEGENDARY) {
+    return Math.random() < 0.49 ? Rarity.LEGENDARY : getRandomRarity();
+  }
+
+  // Logique normale pour les autres boosters
   const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
   let random = Math.random() * total;
 

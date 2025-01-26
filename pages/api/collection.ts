@@ -1,9 +1,30 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Rarity, Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth/[...nextauth]';
 
 const prisma = new PrismaClient();
+
+type SortOption = 'date-asc' | 'date-desc' | 'rarity-asc' | 'rarity-desc' | 'name-asc' | 'name-desc';
+
+const getSortOrder = (sort: SortOption | string): Prisma.CollectedCardOrderByWithRelationInput => {
+  switch (sort) {
+    case 'date-asc':
+      return { createdAt: 'asc' };
+    case 'date-desc':
+      return { createdAt: 'desc' };
+    case 'rarity-asc':
+      return { card: { rarity: 'asc' } };
+    case 'rarity-desc':
+      return { card: { rarity: 'desc' } };
+    case 'name-asc':
+      return { card: { name: 'asc' } };
+    case 'name-desc':
+      return { card: { name: 'desc' } };
+    default:
+      return { card: { rarity: 'desc' } };
+  }
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -18,22 +39,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ message: 'Non authentifié' });
     }
 
-    // Récupérer uniquement les cartes de l'utilisateur connecté
+    // Récupérer les paramètres de filtre de la requête
+    const { search, rarity, shiny, sort = 'rarity-desc' } = req.query;
+
+    // Construire la requête avec les filtres
+    const where: Prisma.CollectedCardWhereInput = {
+      userId: session.user.id,
+      ...(shiny === 'true' || shiny === 'false' ? { isShiny: shiny === 'true' } : {}),
+      card: {
+        ...(search ? {
+          name: {
+            contains: search as string,
+            mode: 'insensitive',
+          },
+        } : {}),
+        ...(rarity ? { rarity: rarity as Rarity } : {}),
+      },
+    };
+
+    // Récupérer les cartes collectées avec les filtres
     const collectedCards = await prisma.collectedCard.findMany({
-      where: {
-        userId: session.user.id
-      },
+      where,
       include: {
-        card: true
+        card: true,
       },
-      orderBy: [
-        { card: { rarity: 'desc' } },
-        { isShiny: 'desc' },
-        { card: { name: 'asc' } }
-      ]
+      orderBy: getSortOrder(sort as string),
     });
 
-    return res.status(200).json(collectedCards);
+    // Récupérer le nombre total de cartes dans le jeu
+    const totalCards = await prisma.card.count();
+    const totalPossibleCards = totalCards * 2; // Normal + Shiny
+
+    // Calculer le nombre de cartes uniques collectées (normal + shiny)
+    const totalCollectedCards = await prisma.collectedCard.count({
+      where: { userId: session.user.id },
+    });
+
+    // Calculer le nombre de cartes manquantes
+    const missingCards = totalPossibleCards - totalCollectedCards;
+
+    return res.status(200).json({
+      cards: collectedCards,
+      stats: {
+        totalPossibleCards,
+        totalCollectedCards,
+        missingCards,
+      }
+    });
   } catch (error) {
     console.error('Erreur lors de la récupération de la collection:', error);
     return res.status(500).json({ message: 'Erreur interne du serveur' });

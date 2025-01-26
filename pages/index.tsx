@@ -1,17 +1,56 @@
-import React from 'react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
-const Home: React.FC = () => {
+export default function Home() {
+  const { data: session } = useSession();
+
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <h1 className="text-4xl font-bold mb-4">Bienvenue dans l&apos;application TCG Light</h1>
-      <p className="text-lg mb-6">Ouvrez des boosters et collectionnez vos cartes !</p>
-      <div className="flex space-x-4">
-        <Link href="/signup" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">S&apos;inscrire</Link>
-        <Link href="/login" className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Se connecter</Link>
+    <div className="max-w-7xl mx-auto p-6">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-game-accent mb-4">Bienvenue sur TCG Friends</h1>
+        <p className="text-xl text-game-text mb-8">Découvrez l&apos;univers passionnant des cartes à collectionner !</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="game-panel p-6">
+          <h2 className="text-xl font-bold text-game-accent mb-4">Collectionnez</h2>
+          <p className="text-game-text">Ouvrez des boosters et collectionnez plus de 100 cartes uniques, dont certaines en version brillante !</p>
+        </div>
+        <div className="game-panel p-6">
+          <h2 className="text-xl font-bold text-game-accent mb-4">4 Raretés</h2>
+          <p className="text-game-text">Découvrez des cartes communes, peu communes, rares et légendaires, chacune avec son style unique.</p>
+        </div>
+        <div className="game-panel p-6">
+          <h2 className="text-xl font-bold text-game-accent mb-4">3 Types de Boosters</h2>
+          <p className="text-game-text">Choisissez parmi différents boosters pour maximiser vos chances d&apos;obtenir des cartes rares !</p>
+        </div>
+      </div>
+
+      <div className="flex justify-center space-x-6">
+        {!session?.user ? (
+          <>
+            <Link 
+              href="/signup" 
+              className="game-button px-8 py-3 text-lg"
+            >
+              Commencer l&apos;aventure
+            </Link>
+            <Link 
+              href="/login" 
+              className="game-button-secondary px-8 py-3 text-lg"
+            >
+              Se connecter
+            </Link>
+          </>
+        ) : (
+          <Link 
+            href="/collection" 
+            className="game-button px-8 py-3 text-lg"
+          >
+            Accéder à ma collection
+          </Link>
+        )}
       </div>
     </div>
   );
-};
-
-export default Home; 
+} 

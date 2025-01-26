@@ -25,7 +25,7 @@ function AppContent({ Component, pageProps }: AppContentProps) {
   const router = useRouter();
 
   useEffect(() => {
-    const publicPages = ['/login', '/signup'];
+    const publicPages = ['/', '/login', '/signup'];
     const isPublicPage = publicPages.includes(router.pathname);
 
     if (!session && !isPublicPage && status !== 'loading') {

@@ -16,6 +16,26 @@ const AdminUsers: React.FC = () => {
   const { data: session } = useSession();
   const [users, setUsers] = useState<User[]>([]);
 
+  const handleRoleChange = async (userId: number, newRole: UserRole) => {
+    try {
+      const res = await fetch('/api/admin/users/update-role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, role: newRole }),
+      });
+
+      if (res.ok) {
+        setUsers(users.map(user => 
+          user.id === userId ? { ...user, role: newRole } : user
+        ));
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du rôle:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -63,7 +83,19 @@ const AdminUsers: React.FC = () => {
             {users.map((user) => (
               <tr key={user.id} className="border-t border-game-accent/20">
                 <td className="p-4">{user.username}</td>
-                <td className="p-4">{user.role.toLowerCase()}</td>
+                <td className="p-4">
+                  <select
+                    value={user.role}
+                    onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
+                    className="bg-game-dark text-game-text p-1 rounded border border-game-muted"
+                  >
+                    {Object.values(UserRole).map((role) => (
+                      <option key={role} value={role}>
+                        {role.toLowerCase()}
+                      </option>
+                    ))}
+                  </select>
+                </td>
                 <td className="p-4">{user.credits}</td>
                 <td className="p-4">{user.totalBoostersOpened}</td>
                 <td className="p-4">{user.legendaryCardsFound}</td>

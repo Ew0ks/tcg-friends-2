@@ -104,6 +104,7 @@ export const authOptions: AuthOptions = {
   },
   pages: {
     signIn: '/login',
+    error: '/login',
   },
   debug: true
 };

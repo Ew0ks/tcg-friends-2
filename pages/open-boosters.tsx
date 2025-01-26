@@ -106,25 +106,34 @@ const OpenBoosters: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {boosters.map((booster) => (
-          <div key={booster.type} className="game-panel p-6 flex flex-col items-center">
-            <h2 className="text-xl font-bold text-game-accent mb-4">
-              Booster {booster.type.toLowerCase()}
-            </h2>
-            <p className="text-game-text mb-4">
-              {booster.cardCount} cartes
-              {booster.type === BoosterType.STANDARD && ' (min. 1 peu commune)'}
-              {booster.type === BoosterType.RARE && ' (min. 1 rare)'}
-              {booster.type === BoosterType.LEGENDARY && ' (légendaire garantie)'}
-            </p>
-            <div className="flex items-center space-x-2 mb-6">
-              <span className="text-2xl font-bold text-game-success">
-                {booster.cost}
-              </span>
-              <span className="text-game-text">crédits</span>
+          <div 
+            key={booster.type} 
+            className={`game-panel p-6 flex flex-col items-center border-2 h-[300px] ${
+              booster.type === BoosterType.LEGENDARY ? 'border-purple-500' :
+              booster.type === BoosterType.RARE ? 'border-blue-500' :
+              'border-gray-500'
+            }`}
+          >
+            <div className="flex-1 flex flex-col items-center">
+              <h2 className="text-xl font-bold text-game-accent mb-4">
+                Booster {booster.type.toLowerCase()}
+              </h2>
+              <p className="text-game-text mb-4">
+                {booster.cardCount} cartes
+                {booster.type === BoosterType.STANDARD && ' (min. 1 peu commune)'}
+                {booster.type === BoosterType.RARE && ' (min. 1 rare)'}
+                {booster.type === BoosterType.LEGENDARY && ' (49% légendaire, 51% droprate normal)'}
+              </p>
+              <div className="flex items-center space-x-2 mb-6">
+                <span className="text-2xl font-bold text-game-success">
+                  {booster.cost}
+                </span>
+                <span className="text-game-text">crédits</span>
+              </div>
             </div>
             <button
               onClick={() => handleOpenBooster(booster.type)}
-              className="game-button w-full"
+              className="game-button w-full mt-auto"
               disabled={!session?.user || currentCredits < booster.cost}
             >
               Ouvrir
