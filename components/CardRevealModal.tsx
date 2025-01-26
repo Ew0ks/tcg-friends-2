@@ -24,6 +24,11 @@ const CardRevealModal: React.FC<CardRevealModalProps> = ({ cards, isOpen, onClos
     });
   };
 
+  const handleRevealAll = () => {
+    const allIndexes = Array.from({ length: cards.length }, (_, i) => i);
+    setRevealedCards(new Set(allIndexes));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -36,12 +41,20 @@ const CardRevealModal: React.FC<CardRevealModalProps> = ({ cards, isOpen, onClos
           <h2 className="text-2xl font-bold text-game-accent">
             Cartes obtenues !
           </h2>
-          <button
-            onClick={onClose}
-            className="text-game-muted hover:text-game-text"
-          >
-            Fermer
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleRevealAll}
+              className="text-game-accent hover:text-game-text transition-colors"
+            >
+              Tout révéler
+            </button>
+            <button
+              onClick={onClose}
+              className="text-game-muted hover:text-game-text transition-colors"
+            >
+              Fermer
+            </button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 ">

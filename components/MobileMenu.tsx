@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { User } from 'next-auth';
+import { HomeIcon } from '@heroicons/react/24/outline';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -33,27 +34,35 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogout, user
   if (!shouldRender) return null;
 
   const MobileNavLinks = () => (
-    <>
-      <Link 
-        href="/" 
-        className="text-game-text hover:text-game-accent transition-colors"
+    <div className="flex flex-col space-y-4">
+      <Link
+        href="/"
+        className="text-game-text hover:text-game-accent transition-colors flex items-center gap-2"
         onClick={onClose}
       >
+        <HomeIcon className="h-6 w-6" />
         Accueil
       </Link>
-      <Link 
-        href="/collection" 
+      <Link
+        href="/collection"
         className="text-game-text hover:text-game-accent transition-colors"
         onClick={onClose}
       >
         Collection
       </Link>
-      <Link 
-        href="/open-boosters" 
+      <Link
+        href="/open-boosters"
         className="text-game-text hover:text-game-accent transition-colors"
         onClick={onClose}
       >
         Ouvrir Booster
+      </Link>
+      <Link
+        href="/merchant"
+        className="text-game-text hover:text-game-accent transition-colors"
+        onClick={onClose}
+      >
+        Marchand
       </Link>
       {user && user.role === 'ADMIN' && (
         <Link
@@ -64,7 +73,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogout, user
           Administration
         </Link>
       )}
-    </>
+    </div>
   );
 
   return (

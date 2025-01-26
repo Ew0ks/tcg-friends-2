@@ -119,7 +119,7 @@ const OpenBoosters: React.FC = () => {
                 Booster {booster.type.toLowerCase()}
               </h2>
               <p className="text-game-text mb-4">
-                {booster.cardCount} cartes
+                {booster.cardCount} carte{booster.cardCount > 1 ? 's' : ''}
                 {booster.type === BoosterType.STANDARD && ' (min. 1 peu commune)'}
                 {booster.type === BoosterType.RARE && ' (min. 1 rare)'}
                 {booster.type === BoosterType.LEGENDARY && ' (49% légendaire, 51% droprate normal)'}

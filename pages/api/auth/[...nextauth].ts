@@ -14,7 +14,7 @@ declare module "next-auth" {
   }
 
   interface User {
-    id: string;
+    id: string | number;
     role: UserRole;
     credits: number;
     username: string;
@@ -72,7 +72,7 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         // Première connexion : on initialise le token avec les données de l'utilisateur
-        token.id = user.id;
+        token.id = user.id.toString();
         token.role = user.role;
         token.credits = user.credits;
         token.username = user.username;

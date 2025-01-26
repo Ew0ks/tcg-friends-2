@@ -47,7 +47,7 @@ model Card {
   description    String?
   quote          String?
   power          Int
-  imageUrl       String            @default("/images/cards/default.jpg")
+  imageUrl       String            @default("/images/cards/placeholder.webp")
   collectedCards CollectedCard[]
   boosterCards   CardFromBooster[]
   createdAt      DateTime          @default(now())

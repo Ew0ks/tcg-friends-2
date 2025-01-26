@@ -25,7 +25,7 @@ const Card: React.FC<CardProps> = ({
   power,
   isShiny,
   isNew = false,
-  imageUrl,
+  imageUrl = '/images/cards/placeholder.webp',
   quantity,
   className = '',
   onHover,
@@ -59,23 +59,22 @@ const Card: React.FC<CardProps> = ({
       )}
 
       {/* Bulle de puissance */}
-      <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-game-accent flex items-center justify-center border-2 border-game-dark shadow-lg">
+      <div className={`absolute -top-3 -right-3 w-10 h-10 rounded-full bg-game-accent flex items-center justify-center border-2 border-game-dark shadow-lg ${isShiny ? 'power-bubble-shine' : ''}`}>
         <span className="text-lg font-bold text-game-dark">{power}</span>
       </div>
 
-      <div className="w-full h-40 mb-2 overflow-hidden rounded-lg">
-      <Image
-        src={imageUrl}
-        alt={name}
-        fill
-      />
+      <div className="w-full h-40 mb-2 overflow-hidden rounded-lg relative">
+        <Image
+          src={imageUrl}
+          alt={name}
+          width={256}
+          height={160}
+          className="w-full h-full object-cover"
+        />
       </div>
 
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-bold">{name}</h3>
-        {isShiny && (
-          <span className="text-sm text-yellow-400">✨ Shiny</span>
-        )}
+        <h3 className={`text-lg font-bold ${isShiny ? 'shiny-title' : ''}`}>{name}</h3>
       </div>
 
       <p className="text-sm mb-2 h-16 overflow-y-auto">{description}</p>
@@ -93,7 +92,7 @@ const Card: React.FC<CardProps> = ({
           </span>
         )}
         <span className={`text-xs ${getRarityTextColor(rarity)}`}>
-          {rarity}
+          {isShiny && <span className="text-yellow-400 shiny-title">✨ Shiny - </span>}{rarity}
         </span>
       </div>
     </div>

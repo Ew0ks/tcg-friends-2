@@ -1,4 +1,5 @@
 ## Règles générales
+    - le nom de l'application est TCG Xprcht
     - On utilise au maximum les bonnes pratiques de Javascript
     - On utilise au maximum les bonnes pratiques de Typescript
     - On utilise au maximum les bonnes pratiques de React

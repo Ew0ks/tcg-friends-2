@@ -55,6 +55,9 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
       <Link href="/open-boosters" className="text-game-text hover:text-game-accent transition-colors">
         Ouvrir Booster
       </Link>
+      <Link href="/merchant" className="text-game-text hover:text-game-accent transition-colors">
+        Marchand
+      </Link>
       {user && user.role === 'ADMIN' && (
         <Link
           href="/admin/users"
@@ -83,7 +86,9 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
         </nav>
 
         {/* Logo */}
-        <h1 className="text-2xl font-bold text-game-accent">TCG Friends</h1>
+        <Link href="/" className="flex items-center">
+          <h1 className="text-2xl font-bold text-game-accent">TCG Xprcht</h1>
+        </Link>
 
         {/* User info */}
         <div className="flex items-center space-x-6">

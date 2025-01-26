@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-game-accent mb-4">Bienvenue sur TCG Friends</h1>
+        <h1 className="text-4xl font-bold text-game-accent mb-4">Bienvenue sur TCG Xprcht</h1>
         <p className="text-xl text-game-text mb-8">Découvrez l&apos;univers passionnant des cartes à collectionner !</p>
       </div>
 
