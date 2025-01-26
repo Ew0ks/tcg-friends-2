@@ -38,7 +38,7 @@ const AdminUsers: React.FC = () => {
     return (
       <div className="max-w-7xl mx-auto p-6">
         <h1 className="text-3xl font-bold text-game-accent mb-8">Accès refusé</h1>
-        <p className="text-game-text">Vous n'avez pas les droits pour accéder à cette page.</p>
+        <p className="text-game-text">Vous n&apos;avez pas les droits pour accéder à cette page.</p>
       </div>
     );
   }
@@ -48,10 +48,10 @@ const AdminUsers: React.FC = () => {
       <h1 className="text-3xl font-bold text-game-accent mb-8">Gestion des Utilisateurs</h1>
       
       <div className="overflow-x-auto">
-        <table className="w-full game-card">
+        <table className="w-full game-panel">
           <thead>
             <tr className="text-left">
-              <th className="p-4">Nom d'utilisateur</th>
+              <th className="p-4">Nom d&apos;utilisateur</th>
               <th className="p-4">Rôle</th>
               <th className="p-4">Crédits</th>
               <th className="p-4">Boosters ouverts</th>

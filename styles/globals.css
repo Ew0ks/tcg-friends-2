@@ -17,7 +17,36 @@ p {
 
 @layer components {
   .game-card {
-    @apply bg-game-light rounded-lg shadow-game p-4 transition-all duration-300 hover:shadow-lg hover:scale-105;
+    @apply bg-game-light rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 relative overflow-hidden;
+  }
+
+  .game-card[data-shiny="true"]::after {
+    content: "";
+    position: absolute;
+    top: -150%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 45%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.1) 55%,
+      transparent 100%
+    );
+    transform: rotate(45deg);
+    transition: all 0.3s;
+    opacity: 0;
+  }
+
+  .game-card[data-shiny="true"]:hover::after {
+    opacity: 1;
+    animation: shine-effect 1.5s infinite;
+  }
+
+  .game-panel {
+    @apply bg-game-light rounded-lg p-4;
   }
 
   .game-button {
@@ -26,6 +55,17 @@ p {
 
   .game-input {
     @apply bg-game-light border border-game-muted rounded-md p-2 text-game-text focus:outline-none focus:ring-2 focus:ring-game-accent;
+  }
+}
+
+@keyframes shine-effect {
+  0% {
+    top: -150%;
+    left: -50%;
+  }
+  100% {
+    top: 150%;
+    left: 150%;
   }
 }
 

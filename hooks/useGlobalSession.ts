@@ -4,14 +4,20 @@ import { useCallback } from 'react';
 export const useGlobalSession = () => {
   const { data: session, update } = useSession();
 
-  const refreshSession = useCallback(async () => {
-    await update();
-    // Forcer un rafraîchissement de la page pour mettre à jour tous les composants
-    window.location.reload();
-  }, [update]);
+  const updateCredits = useCallback(async (newCredits: number) => {
+    if (session) {
+      await update({
+        ...session,
+        user: {
+          ...session.user,
+          credits: newCredits
+        }
+      });
+    }
+  }, [session, update]);
 
   return {
     session,
-    refreshSession
+    updateCredits
   };
 }; 

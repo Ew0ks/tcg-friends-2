@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import Card, { CardProps } from './Card';
 
 interface CardRevealModalProps {
@@ -8,10 +8,19 @@ interface CardRevealModalProps {
 }
 
 const CardRevealModal: React.FC<CardRevealModalProps> = ({ cards, isOpen, onClose }) => {
+  const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-game-dark p-8 rounded-lg w-full max-w-6xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-game-accent">
@@ -26,8 +35,8 @@ const CardRevealModal: React.FC<CardRevealModalProps> = ({ cards, isOpen, onClos
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {cards.map((card) => (
-            <div key={`${card.id}-${card.isShiny}`} className="flex justify-center">
+          {cards.map((card, index) => (
+            <div key={`${card.id}-${card.isShiny}-${index}`} className="flex justify-center">
               <Card {...card} />
             </div>
           ))}

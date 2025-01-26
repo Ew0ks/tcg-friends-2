@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { FaCoins, FaUserCircle } from 'react-icons/fa';
 import { Session } from 'next-auth';
@@ -11,9 +11,29 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        buttonRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
-    <header className="bg-game-light shadow-game p-4">
+    <header className="bg-game-light p-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <nav className="flex space-x-6">
           <Link href="/collection" className="text-game-text hover:text-game-accent transition-colors">
@@ -40,6 +60,7 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
           <div className="relative flex items-center">
             <span className="text-game-text mr-2">{user?.username}</span>
             <button 
+              ref={buttonRef}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-game-text hover:text-game-accent transition-colors focus:outline-none"
             >
@@ -47,7 +68,10 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
             </button>
             
             {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-game-light rounded-md shadow-game">
+              <div 
+                ref={menuRef}
+                className="absolute right-0 top-full mt-2 w-48 bg-game-light rounded-md z-50"
+              >
                 <div className="py-1">
                   <button
                     onClick={() => {

@@ -81,15 +81,15 @@ const Collection: React.FC = () => {
     <div className="max-w-7xl mx-auto p-6">
       {/* Stats de collection */}
       <div className="mb-8 grid grid-cols-3 gap-4">
-        <div className="game-card text-center">
+        <div className="text-center">
           <h3 className="text-xl font-bold text-game-accent">Total des cartes</h3>
           <p className="text-2xl">{stats.totalCards}</p>
         </div>
-        <div className="game-card text-center">
+        <div className="text-center">
           <h3 className="text-xl font-bold text-game-accent">Cartes uniques</h3>
           <p className="text-2xl">{stats.uniqueCards}</p>
         </div>
-        <div className="game-card text-center">
+        <div className="text-center">
           <h3 className="text-xl font-bold text-game-accent">Cartes Shiny</h3>
           <p className="text-2xl">{stats.shinyCards}</p>
         </div>

@@ -36,7 +36,7 @@ const Signup: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-game-dark bg-[url('/game-pattern.png')] flex items-center justify-center p-4">
-      <div className="game-card w-full max-w-md">
+      <div className="game-panel w-full max-w-md">
         <h1 className="text-3xl font-bold text-center text-game-accent mb-8">S&apos;inscrire</h1>
         {error && (
           <div className="mb-4 p-3 bg-game-error bg-opacity-10 border border-game-error rounded text-game-error">

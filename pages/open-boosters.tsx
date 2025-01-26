@@ -21,7 +21,7 @@ interface OpenedCard {
 }
 
 const OpenBoosters: React.FC = () => {
-  const { session, refreshSession } = useGlobalSession();
+  const { session, updateCredits } = useGlobalSession();
   const [boosters, setBoosters] = useState<Booster[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openedCards, setOpenedCards] = useState<OpenedCard[]>([]);
@@ -81,8 +81,9 @@ const OpenBoosters: React.FC = () => {
         isShiny: cardData.isShiny,
       }));
       
-      // Mettre à jour les crédits immédiatement
-      setCurrentCredits(prev => prev - booster.cost);
+      // Mettre à jour les crédits localement
+      const newCredits = currentCredits - booster.cost;
+      setCurrentCredits(newCredits);
       
       // Afficher les cartes dans le modal
       setOpenedCards(processedCards);
@@ -95,8 +96,8 @@ const OpenBoosters: React.FC = () => {
 
   const handleCloseModal = async () => {
     setIsModalOpen(false);
-    // Rafraîchir la session globalement
-    await refreshSession();
+    // Mettre à jour la session globale après la fermeture de la modale
+    await updateCredits(currentCredits);
   };
 
   return (
@@ -105,7 +106,7 @@ const OpenBoosters: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {boosters.map((booster) => (
-          <div key={booster.type} className="game-card p-6 flex flex-col items-center">
+          <div key={booster.type} className="game-panel p-6 flex flex-col items-center">
             <h2 className="text-xl font-bold text-game-accent mb-4">
               Booster {booster.type.toLowerCase()}
             </h2>

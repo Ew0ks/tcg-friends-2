@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import type { Rarity } from '@prisma/client';
+import Image from 'next/image';
 
 export interface CardProps {
   id: number;
   name: string;
-  rarity: Rarity;
+  rarity: string | Rarity;
   description: string;
   quote?: string;
   power: number;
@@ -47,6 +48,7 @@ const Card: React.FC<CardProps> = ({
         ${isNew && !hasHovered ? 'animate-pulse' : ''}
         ${className}
       `}
+      data-shiny={isShiny}
       onMouseEnter={handleMouseEnter}
     >
       {/* Badge "Nouveau" */}
@@ -62,11 +64,11 @@ const Card: React.FC<CardProps> = ({
       </div>
 
       <div className="w-full h-40 mb-2 overflow-hidden rounded-lg">
-        <img
-          src={imageUrl}
-          alt={name}
-          className="w-full h-full object-cover"
-        />
+      <Image
+        src={imageUrl}
+        alt={name}
+        fill
+      />
       </div>
 
       <div className="flex justify-between items-center mb-2">
@@ -98,7 +100,7 @@ const Card: React.FC<CardProps> = ({
   );
 };
 
-const getRarityStyle = (rarity: Rarity) => {
+const getRarityStyle = (rarity: string | Rarity) => {
   switch (rarity) {
     case 'LEGENDARY':
       return 'bg-gradient-to-br from-purple-900 to-game-dark';
@@ -111,7 +113,7 @@ const getRarityStyle = (rarity: Rarity) => {
   }
 };
 
-const getRarityTextColor = (rarity: Rarity) => {
+const getRarityTextColor = (rarity: string | Rarity) => {
   switch (rarity) {
     case 'LEGENDARY':
       return 'text-purple-400';

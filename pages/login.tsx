@@ -26,7 +26,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-game-dark bg-[url('/game-pattern.png')] flex items-center justify-center p-4">
-      <div className="game-card w-full max-w-md">
+      <div className="game-panel w-full max-w-md">
         <h1 className="text-3xl font-bold text-center text-game-accent mb-8">Login</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
