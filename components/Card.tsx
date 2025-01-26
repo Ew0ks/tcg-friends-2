@@ -42,7 +42,7 @@ const Card: React.FC<CardProps> = ({
   return (
     <div
       className={`
-        relative w-64 h-96 p-4 rounded-lg border-2
+        relative w-64 h-96 p-4 rounded-lg border-2 overflow-visible
         ${isShiny ? 'animate-shine border-yellow-400' : 'border-game-muted'}
         ${getRarityStyle(rarity)}
         ${isNew && !hasHovered ? 'animate-pulse' : ''}

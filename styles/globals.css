@@ -17,7 +17,47 @@ p {
 
 @layer components {
   .game-card {
-    @apply bg-game-light rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 relative overflow-hidden;
+    position: relative;
+    & > div {
+      backface-visibility: hidden;
+    }
+    & > div:first-of-type {
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+      transform: rotateY(180deg);
+      .absolute {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.6s;
+      }
+    }
+    & > div:last-of-type {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      top: 0;
+      left: 0;
+      background-image: url('/images/cards/back-card.webp');
+      background-size: cover;
+      background-position: center;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+      transform: rotateY(0deg);
+    }
+  }
+
+
+  .game-card.flipped {
+    & > div:first-of-type {
+      transform: rotateY(0deg);
+      .absolute {
+        display: flex;
+        opacity: 1;
+      }
+    }
+    & > div:last-of-type {
+      transform: rotateY(180deg);
+    }
   }
 
   .game-card[data-shiny="true"]::after {
@@ -40,11 +80,6 @@ p {
     opacity: 0;
   }
 
-  .game-card[data-shiny="true"]:hover::after {
-    opacity: 1;
-    animation: shine-effect 1.5s infinite;
-  }
-
   .game-panel {
     @apply bg-game-light rounded-lg p-4;
   }
@@ -55,17 +90,6 @@ p {
 
   .game-input {
     @apply bg-game-light border border-game-muted rounded-md p-2 text-game-text focus:outline-none focus:ring-2 focus:ring-game-accent;
-  }
-}
-
-@keyframes shine-effect {
-  0% {
-    top: -150%;
-    left: -50%;
-  }
-  100% {
-    top: 150%;
-    left: 150%;
   }
 }
 

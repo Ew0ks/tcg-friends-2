@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import Card, { CardProps } from './Card';
 
 interface CardRevealModalProps {
@@ -8,11 +8,21 @@ interface CardRevealModalProps {
 }
 
 const CardRevealModal: React.FC<CardRevealModalProps> = ({ cards, isOpen, onClose }) => {
+  const [revealedCards, setRevealedCards] = useState<Set<number>>(new Set());
+
   const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   }, [onClose]);
+
+  const handleCardClick = (index: number) => {
+    setRevealedCards(prev => {
+      const newSet = new Set(prev);
+      newSet.add(index);
+      return newSet;
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -34,10 +44,17 @@ const CardRevealModal: React.FC<CardRevealModalProps> = ({ cards, isOpen, onClos
           </button>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 ">
           {cards.map((card, index) => (
-            <div key={`${card.id}-${card.isShiny}-${index}`} className="flex justify-center">
-              <Card {...card} />
+            <div 
+              key={`${card.id}-${card.isShiny}-${index}`} 
+              className={`flex justify-center game-card ${revealedCards.has(index) ? 'flipped' : ''}`}
+              onClick={() => handleCardClick(index)}
+            >
+              <Card 
+                {...card} 
+              />
+              <div />
             </div>
           ))}
         </div>
