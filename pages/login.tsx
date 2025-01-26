@@ -1,38 +1,26 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '../context/AuthContext';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
-  const { setUser } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      
-      console.log('Response status:', res.status); // Debug
-      console.log('Response data:', data); // Debug
-      
-      if (res.ok) {
-        console.log('Setting user:', data.user); // Debug
-        setUser(data.user);
-        router.push('/collection');
-      } else {
-        console.error('Login error:', data.message);
-      }
-    } catch (error) {
-      console.error('Login error:', error);
+    
+    const result = await signIn('credentials', {
+      username,
+      password,
+      redirect: false,
+    });
+
+    if (result?.ok) {
+      router.push('/collection');
+    } else {
+      console.error('Erreur de connexion:', result?.error);
     }
   };
 

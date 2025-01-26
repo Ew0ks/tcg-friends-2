@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useSession } from 'next-auth/react';
 import Card from '../components/Card';
 
 // Définir le type pour une carte collectée
@@ -20,7 +20,7 @@ interface CollectedCard {
 }
 
 const Collection: React.FC = () => {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [collectedCards, setCollectedCards] = useState<CollectedCard[]>([]);
   const [stats, setStats] = useState({
     totalCards: 0,
@@ -43,13 +43,13 @@ const Collection: React.FC = () => {
       setStats(stats);
     };
 
-    if (user) {
+    if (session?.user) {
       fetchCollectedCards();
     }
-  }, [user]);
+  }, [session]);
 
   const handleCardHover = async (cardId: number, isShiny: boolean) => {
-    if (!user) return;
+    if (!session?.user) return;
 
     try {
       await fetch('/api/collection/mark-as-seen', {
@@ -58,7 +58,7 @@ const Collection: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user.id,
+          userId: session.user.id,
           cardId,
           isShiny,
         }),

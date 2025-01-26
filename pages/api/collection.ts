@@ -1,5 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth/[...nextauth]';
 
 const prisma = new PrismaClient();
 
@@ -10,30 +12,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Récupérer l'ID de l'utilisateur depuis le cookie
-    const authCookie = req.cookies.auth;
-    if (!authCookie) {
+    const session = await getServerSession(req, res, authOptions);
+    
+    if (!session?.user?.id) {
       return res.status(401).json({ message: 'Non authentifié' });
-    }
-
-    const userId = parseInt(authCookie);
-    if (isNaN(userId)) {
-      return res.status(401).json({ message: 'Session invalide' });
-    }
-
-    // Vérifier que l'utilisateur existe
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
-    if (!user) {
-      return res.status(401).json({ message: 'Utilisateur non trouvé' });
     }
 
     // Récupérer uniquement les cartes de l'utilisateur connecté
     const collectedCards = await prisma.collectedCard.findMany({
       where: {
-        userId: userId
+        userId: session.user.id
       },
       include: {
         card: true

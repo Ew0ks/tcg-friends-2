@@ -18,6 +18,7 @@
     - On utilise Shadcn/UI pour les composants
     - On utilise Next.js pour le serveur
     - On utilise Next.js pour le client
+    - Quoi qu'il arrive, on garde l'architecture NextJs avec les pages et les API. On ne change pas l'architecture de NextJs.
 
 ## Description du projet
     - L'application est une ébauche de TCG (Trading Card Game)
