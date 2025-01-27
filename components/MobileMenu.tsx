@@ -51,6 +51,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogout, user
         Collection
       </Link>
       <Link
+        href="/collections"
+        className="text-game-text hover:text-game-accent transition-colors"
+        onClick={onClose}
+      >
+        Collections publiques
+      </Link>
+      <Link
         href="/open-boosters"
         className="text-game-text hover:text-game-accent transition-colors"
         onClick={onClose}
@@ -63,6 +70,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogout, user
         onClick={onClose}
       >
         Marchand
+      </Link>
+      <Link
+        href="/trades"
+        className="text-game-text hover:text-game-accent transition-colors"
+        onClick={onClose}
+      >
+        Échanges
       </Link>
       {user && user.role === 'ADMIN' && (
         <Link

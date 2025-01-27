@@ -25,6 +25,14 @@ enum UserRole {
   ADMIN
 }
 
+enum TradeStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
 model User {
   id                 Int               @id @default(autoincrement())
   username           String            @unique
@@ -38,6 +46,9 @@ model User {
   shinyCardsFound    Int              @default(0)
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
+  isPublic           Boolean           @default(true)
+  initiatedTrades    TradeOffer[]      @relation("InitiatedTrades")
+  receivedTrades     TradeOffer[]     @relation("ReceivedTrades")
 }
 
 model Card {
@@ -50,6 +61,7 @@ model Card {
   imageUrl       String            @default("/images/cards/placeholder.webp")
   collectedCards CollectedCard[]
   boosterCards   CardFromBooster[]
+  tradeCards     TradeCard[]
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 }
@@ -93,4 +105,34 @@ model BoosterConfig {
   cost        Int
   cardCount   Int
   updatedAt   DateTime    @updatedAt
+}
+
+model TradeOffer {
+  id            Int         @id @default(autoincrement())
+  initiatorId   Int
+  recipientId   Int
+  status        TradeStatus @default(PENDING)
+  message       String?
+  expiresAt     DateTime
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  initiator     User        @relation("InitiatedTrades", fields: [initiatorId], references: [id])
+  recipient     User        @relation("ReceivedTrades", fields: [recipientId], references: [id])
+  
+  offeredCards  TradeCard[] @relation("OfferedCards")
+  requestedCards TradeCard[] @relation("RequestedCards")
+}
+
+model TradeCard {
+  id            Int         @id @default(autoincrement())
+  tradeOfferId  Int
+  cardId        Int
+  isShiny       Boolean     @default(false)
+  quantity      Int         @default(1)
+  isOffered     Boolean     @default(true)
+  
+  tradeOffer    TradeOffer  @relation("OfferedCards", fields: [tradeOfferId], references: [id], map: "offered_cards")
+  requestedIn   TradeOffer  @relation("RequestedCards", fields: [tradeOfferId], references: [id], map: "requested_cards")
+  card          Card        @relation(fields: [cardId], references: [id])
 }

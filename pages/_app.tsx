@@ -8,7 +8,9 @@ import { useEffect } from 'react';
 // Le composant principal de l'application
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
-    <SessionProvider session={session}>
+    <SessionProvider 
+      session={session}
+    >
       <AppContent Component={Component} pageProps={pageProps} />
     </SessionProvider>
   );

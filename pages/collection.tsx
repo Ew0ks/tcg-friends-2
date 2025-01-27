@@ -34,6 +34,8 @@ const Collection: React.FC = () => {
     missingCards: 0,
     completionPercentage: 0,
   });
+  const [isPublic, setIsPublic] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchCollectedCards = async () => {
@@ -68,6 +70,20 @@ const Collection: React.FC = () => {
     }
   }, [session, searchTerm, selectedRarity, shinyFilter, sortOrder]);
 
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('/api/user/settings');
+        const data = await response.json();
+        setIsPublic(data.isPublic);
+      } catch (error) {
+        console.error('Erreur lors du chargement des paramètres:', error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
   const handleCardHover = async (cardId: number, isShiny: boolean) => {
     if (!session?.user) return;
 
@@ -96,8 +112,59 @@ const Collection: React.FC = () => {
     }
   };
 
+  const handlePrivacyChange = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPublic: !isPublic
+        }),
+      });
+
+      if (response.ok) {
+        setIsPublic(!isPublic);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des paramètres:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="container mx-auto p-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <p className="text-game-muted mb-1">Ma collection</p>
+          <h1 className="text-3xl font-bold text-game-accent">
+            Collection personnelle
+          </h1>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={isPublic}
+              onChange={handlePrivacyChange}
+              disabled={isSaving}
+            />
+            <div className="w-11 h-6 bg-game-light peer-focus:outline-none rounded-full peer 
+              peer-checked:after:translate-x-full peer-checked:after:border-white 
+              after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+              after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all
+              peer-checked:bg-game-accent">
+            </div>
+          </label>
+          <span className="text-sm text-game-text">Collection publique</span>
+        </div>
+      </div>
+
       {/* Filtres */}
       <div className="mb-8 game-panel p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
