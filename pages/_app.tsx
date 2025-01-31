@@ -4,6 +4,7 @@ import '../styles/globals.css';
 import { useRouter } from 'next/router';
 import Header from '../components/Header';
 import { useEffect } from 'react';
+import { Toaster } from 'sonner';
 
 // Le composant principal de l'application
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
@@ -11,7 +12,20 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
     <SessionProvider 
       session={session}
     >
-      <AppContent Component={Component} pageProps={pageProps} />
+      <div className="min-h-screen bg-game-dark text-game-text">
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: 'var(--game-light)',
+              border: '1px solid var(--game-accent)',
+              color: 'var(--game-text)',
+            },
+            className: 'game-toast',
+          }}
+        />
+        <AppContent Component={Component} pageProps={pageProps} />
+      </div>
     </SessionProvider>
   );
 }

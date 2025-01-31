@@ -2,16 +2,17 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { User } from 'next-auth';
-import { HomeIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, Cog6ToothIcon as GearIcon } from '@heroicons/react/24/outline';
 
 interface MobileMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
   user: User;
+  pendingTrades: number;
 }
 
-const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogout, user }) => {
+const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogout, user, pendingTrades }) => {
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -48,14 +49,21 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogout, user
         className="text-game-text hover:text-game-accent transition-colors"
         onClick={onClose}
       >
-        Collection
+        Mes cartes
       </Link>
       <Link
         href="/collections"
         className="text-game-text hover:text-game-accent transition-colors"
         onClick={onClose}
       >
-        Collections publiques
+        Collections des joueurs
+      </Link>
+      <Link
+        href="/library"
+        className="text-game-text hover:text-game-accent transition-colors"
+        onClick={onClose}
+      >
+        Catalogue
       </Link>
       <Link
         href="/open-boosters"
@@ -71,21 +79,32 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogout, user
       >
         Marchand
       </Link>
-      <Link
-        href="/trades"
-        className="text-game-text hover:text-game-accent transition-colors"
-        onClick={onClose}
-      >
-        Échanges
-      </Link>
-      {user && user.role === 'ADMIN' && (
+      <div className="relative">
         <Link
-          href="/admin/users"
-          className="text-game-success hover:text-game-accent transition-colors"
+          href="/trades"
+          className="text-game-text hover:text-game-accent transition-colors"
           onClick={onClose}
         >
-          Administration
+          Échanges
+          {pendingTrades > 0 && (
+            <span className="ml-2 bg-game-success text-game-dark text-xs font-bold px-2 py-1 rounded-full">
+              {pendingTrades}
+            </span>
+          )}
         </Link>
+      </div>
+      {user && user.role === 'ADMIN' && (
+        <>
+          <div className="h-px bg-game-light/20 mx-4" />
+          <Link
+            href="/admin"
+            className="flex items-center px-4 py-3 text-game-text hover:bg-game-light hover:text-game-accent transition-colors"
+            onClick={onClose}
+          >
+            <GearIcon className="h-5 w-5 mr-3" />
+            Administration
+          </Link>
+        </>
       )}
     </div>
   );

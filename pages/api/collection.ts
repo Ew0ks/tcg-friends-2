@@ -70,20 +70,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const totalCards = await prisma.card.count();
     const totalPossibleCards = totalCards * 2; // Normal + Shiny
 
-    // Calculer le nombre de cartes uniques collectées (normal + shiny)
-    const totalCollectedCards = await prisma.collectedCard.count({
+    // Calculer les statistiques
+    const uniqueCards = await prisma.collectedCard.count({
       where: { userId: session.user.id },
     });
 
-    // Calculer le nombre de cartes manquantes
-    const missingCards = totalPossibleCards - totalCollectedCards;
+    const shinyCards = await prisma.collectedCard.count({
+      where: { 
+        userId: session.user.id,
+        isShiny: true,
+      },
+    });
+
+    const totalCollectedCards = await prisma.collectedCard.aggregate({
+      where: { userId: session.user.id },
+      _sum: {
+        quantity: true,
+      },
+    });
+
+    // Calculer le nombre de cartes manquantes et le pourcentage de complétion
+    const missingCards = totalPossibleCards - uniqueCards;
+    const completionPercentage = Math.round((uniqueCards / totalPossibleCards) * 100);
 
     return res.status(200).json({
       cards: collectedCards,
       stats: {
-        totalPossibleCards,
-        totalCollectedCards,
+        totalCards: totalCollectedCards._sum.quantity || 0,
+        uniqueCards,
+        shinyCards,
         missingCards,
+        completionPercentage,
       }
     });
   } catch (error) {

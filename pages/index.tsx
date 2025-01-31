@@ -17,11 +17,11 @@ export default function Home() {
           <p className="text-game-text">Ouvrez des boosters et collectionnez plus de 100 cartes uniques, dont certaines en version brillante !</p>
         </div>
         <div className="game-panel p-6">
-          <h2 className="text-xl font-bold text-game-accent mb-4">4 Raretés</h2>
-          <p className="text-game-text">Découvrez des cartes communes, peu communes, rares et légendaires, chacune avec son style unique.</p>
+          <h2 className="text-xl font-bold text-game-accent mb-4">5 Raretés</h2>
+          <p className="text-game-text">Découvrez des cartes communes, peu communes, rares, épiques et légendaires, chacune avec son style unique.</p>
         </div>
         <div className="game-panel p-6">
-          <h2 className="text-xl font-bold text-game-accent mb-4">3 Types de Boosters</h2>
+          <h2 className="text-xl font-bold text-game-accent mb-4">4 Types de Boosters</h2>
           <p className="text-game-text">Choisissez parmi différents boosters pour maximiser vos chances d&apos;obtenir des cartes rares !</p>
         </div>
       </div>

@@ -22,6 +22,11 @@ const PRICES: Record<Rarity, PriceConfig> = {
     bulk: 70,
     bulkQuantity: 10
   },
+  EPIC: {
+    single: 20,
+    bulk: 250,
+    bulkQuantity: 10
+  },
   LEGENDARY: {
     single: 50,
     bulk: 600,

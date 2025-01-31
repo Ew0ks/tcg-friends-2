@@ -5,13 +5,14 @@ import Card from '../../components/Card';
 import { Rarity } from '@prisma/client';
 import Link from 'next/link';
 import TradeModal from '../../components/TradeModal';
+import RarityFilters from '../../components/RarityFilters';
 
 interface CollectedCard {
   id: number;
   card: {
     id: number;
     name: string;
-    rarity: string;
+    rarity: Rarity;
     description: string;
     quote?: string;
     power: number;
@@ -40,7 +41,7 @@ const UserCollectionPage = () => {
   const [collection, setCollection] = useState<UserCollection | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRarity, setSelectedRarity] = useState<string>('');
+  const [selectedRarity, setSelectedRarity] = useState<Rarity | null>(null);
   const [shinyFilter, setShinyFilter] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<string>('rarity-desc');
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
@@ -51,9 +52,10 @@ const UserCollectionPage = () => {
       if (!userId) return;
 
       try {
+        setIsLoading(true);
         const params = new URLSearchParams();
         if (searchTerm) params.append('search', searchTerm);
-        if (selectedRarity) params.append('rarity', selectedRarity);
+        if (selectedRarity) params.append('rarity', selectedRarity.toString());
         if (shinyFilter) params.append('shiny', shinyFilter);
         params.append('sort', sortOrder);
 
@@ -154,7 +156,7 @@ const UserCollectionPage = () => {
 
       {/* Filtres */}
       <div className="mb-8 game-panel p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-game-muted mb-2">
               Rechercher
@@ -166,22 +168,6 @@ const UserCollectionPage = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-game-muted mb-2">
-              Rareté
-            </label>
-            <select
-              className="game-input w-full"
-              value={selectedRarity}
-              onChange={(e) => setSelectedRarity(e.target.value)}
-            >
-              <option value="">Toutes les raretés</option>
-              <option value={Rarity.COMMON}>Commune</option>
-              <option value={Rarity.UNCOMMON}>Peu commune</option>
-              <option value={Rarity.RARE}>Rare</option>
-              <option value={Rarity.LEGENDARY}>Légendaire</option>
-            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-game-muted mb-2">
@@ -225,7 +211,13 @@ const UserCollectionPage = () => {
       </div>
 
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-game-accent">Collection</h2>
+        <div className="flex items-center gap-6">
+          <h2 className="text-2xl font-bold text-game-accent">Collection</h2>
+          <RarityFilters
+            selectedRarity={selectedRarity}
+            onChange={setSelectedRarity}
+          />
+        </div>
         <select
           className="game-input ml-4"
           value={sortOrder}
@@ -245,7 +237,7 @@ const UserCollectionPage = () => {
           <div key={`${collectedCard.card.id}-${collectedCard.isShiny}`} className="relative">
             <Card {...collectedCard.card} isShiny={collectedCard.isShiny} />
             {collectedCard.quantity > 1 && (
-              <div className="absolute top-2 right-2 bg-game-accent text-white px-2 py-1 rounded">
+              <div className="absolute bottom-[-10px] right-[10px] bg-game-accent text-white px-2 py-1 rounded">
                 x{collectedCard.quantity}
               </div>
             )}
@@ -264,7 +256,7 @@ const UserCollectionPage = () => {
       {!isOwnCollection && session?.user && (
         <button
           onClick={() => setIsTradeModalOpen(true)}
-          className="px-4 py-2 bg-game-accent text-white rounded hover:bg-opacity-80"
+          className="px-4 py-2 bg-game-accent text-white rounded hover:bg-opacity-80 fixed bottom-10 left-10"
         >
           Proposer un échange
         </button>

@@ -1,29 +1,42 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth';
 import prisma from '../../../lib/prisma';
 import { TradeStatus } from '@prisma/client';
+import { authOptions } from '../auth/[...nextauth]';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Méthode non autorisée' });
   }
 
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) {
     return res.status(401).json({ message: 'Non authentifié' });
   }
 
   try {
     const { tradeOfferId, accept } = req.body;
+    console.log('Données reçues:', { tradeOfferId, accept, userId: session.user.id });
+
+    if (tradeOfferId === undefined || accept === undefined) {
+      return res.status(400).json({ message: 'Paramètres manquants' });
+    }
 
     // Récupérer l'offre d'échange
     const tradeOffer = await prisma.tradeOffer.findUnique({
-      where: { id: tradeOfferId },
+      where: { id: Number(tradeOfferId) },
       include: {
-        offeredCards: true,
-        requestedCards: true,
-      },
+        cards: true,
+        initiator: {
+          select: { username: true }
+        },
+        recipient: {
+          select: { username: true }
+        }
+      }
     });
+
+    console.log('Offre trouvée:', tradeOffer);
 
     if (!tradeOffer) {
       return res.status(404).json({ message: 'Offre d\'échange non trouvée' });
@@ -39,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (new Date() > tradeOffer.expiresAt) {
       await prisma.tradeOffer.update({
-        where: { id: tradeOfferId },
+        where: { id: Number(tradeOfferId) },
         data: { status: TradeStatus.EXPIRED }
       });
       return res.status(400).json({ message: 'Cette offre a expiré' });
@@ -47,18 +60,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!accept) {
       // Rejeter l'offre
-      await prisma.tradeOffer.update({
-        where: { id: tradeOfferId },
+      const rejectedTrade = await prisma.tradeOffer.update({
+        where: { id: Number(tradeOfferId) },
         data: { status: TradeStatus.REJECTED }
       });
+      console.log('Offre rejetée:', rejectedTrade);
       return res.status(200).json({ message: 'Offre rejetée' });
     }
 
     // Vérifier que les cartes sont toujours disponibles
+    const offeredCards = tradeOffer.cards.filter(card => card.isOffered);
+    const requestedCards = tradeOffer.cards.filter(card => !card.isOffered);
+
     const initiatorCards = await prisma.collectedCard.findMany({
       where: {
         userId: tradeOffer.initiatorId,
-        OR: tradeOffer.offeredCards.map(card => ({
+        OR: offeredCards.map(card => ({
           cardId: card.cardId,
           isShiny: card.isShiny,
           quantity: {
@@ -71,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const recipientCards = await prisma.collectedCard.findMany({
       where: {
         userId: tradeOffer.recipientId,
-        OR: tradeOffer.requestedCards.map(card => ({
+        OR: requestedCards.map(card => ({
           cardId: card.cardId,
           isShiny: card.isShiny,
           quantity: {
@@ -81,19 +98,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    if (initiatorCards.length !== tradeOffer.offeredCards.length || 
-        recipientCards.length !== tradeOffer.requestedCards.length) {
+    console.log('Vérification des cartes:', {
+      initiatorCardsFound: initiatorCards.length,
+      offeredCardsCount: offeredCards.length,
+      recipientCardsFound: recipientCards.length,
+      requestedCardsCount: requestedCards.length
+    });
+
+    if (initiatorCards.length !== offeredCards.length || 
+        recipientCards.length !== requestedCards.length) {
       await prisma.tradeOffer.update({
-        where: { id: tradeOfferId },
+        where: { id: Number(tradeOfferId) },
         data: { status: TradeStatus.CANCELLED }
       });
       return res.status(400).json({ message: 'Les cartes ne sont plus disponibles' });
     }
 
     // Effectuer l'échange dans une transaction
-    await prisma.$transaction(async (prisma) => {
+    const result = await prisma.$transaction(async (prisma) => {
       // Transférer les cartes offertes
-      for (const card of tradeOffer.offeredCards) {
+      for (const card of offeredCards) {
         await prisma.collectedCard.updateMany({
           where: {
             userId: tradeOffer.initiatorId,
@@ -138,7 +162,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Transférer les cartes demandées
-      for (const card of tradeOffer.requestedCards) {
+      for (const card of requestedCards) {
         await prisma.collectedCard.updateMany({
           where: {
             userId: tradeOffer.recipientId,
@@ -183,13 +207,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Mettre à jour le statut de l'offre
-      await prisma.tradeOffer.update({
-        where: { id: tradeOfferId },
+      return await prisma.tradeOffer.update({
+        where: { id: Number(tradeOfferId) },
         data: { status: TradeStatus.ACCEPTED }
       });
     });
 
-    // TODO: Envoyer une notification à l'initiateur
+    console.log('Échange effectué avec succès:', result);
 
     res.status(200).json({ message: 'Échange effectué avec succès' });
   } catch (error) {

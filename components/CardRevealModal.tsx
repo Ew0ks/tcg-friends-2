@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import Card, { CardProps } from './Card';
+import Modal from './Modal';
 
 interface CardRevealModalProps {
   cards: CardProps[];
@@ -9,12 +10,6 @@ interface CardRevealModalProps {
 
 const CardRevealModal: React.FC<CardRevealModalProps> = ({ cards, isOpen, onClose }) => {
   const [revealedCards, setRevealedCards] = useState<Set<number>>(new Set());
-
-  const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  }, [onClose]);
 
   const handleCardClick = (index: number) => {
     setRevealedCards(prev => {
@@ -29,50 +24,38 @@ const CardRevealModal: React.FC<CardRevealModalProps> = ({ cards, isOpen, onClos
     setRevealedCards(new Set(allIndexes));
   };
 
-  if (!isOpen) return null;
+  const footer = (
+    <div className="flex justify-end gap-4">
+      <button
+        onClick={handleRevealAll}
+        className="text-game-accent hover:text-game-text transition-colors"
+      >
+        Tout révéler
+      </button>
+    </div>
+  );
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={handleBackdropClick}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Cartes obtenues !"
+      maxWidth="full"
+      footer={footer}
     >
-      <div className="bg-game-dark p-8 rounded-lg w-full max-w-6xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-game-accent">
-            Cartes obtenues !
-          </h2>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleRevealAll}
-              className="text-game-accent hover:text-game-text transition-colors"
-            >
-              Tout révéler
-            </button>
-            <button
-              onClick={onClose}
-              className="text-game-muted hover:text-game-text transition-colors"
-            >
-              Fermer
-            </button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {cards.map((card, index) => (
+          <div 
+            key={`${card.id}-${card.isShiny}-${index}`} 
+            className={`flex justify-center game-card ${revealedCards.has(index) ? 'flipped' : ''}`}
+            onClick={() => handleCardClick(index)}
+          >
+            <Card {...card} />
+            <div />
           </div>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 ">
-          {cards.map((card, index) => (
-            <div 
-              key={`${card.id}-${card.isShiny}-${index}`} 
-              className={`flex justify-center game-card ${revealedCards.has(index) ? 'flipped' : ''}`}
-              onClick={() => handleCardClick(index)}
-            >
-              <Card 
-                {...card} 
-              />
-              <div />
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
-    </div>
+    </Modal>
   );
 };
 

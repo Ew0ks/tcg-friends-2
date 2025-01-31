@@ -74,4 +74,3 @@ Créer une application Next.js en TypeScript qui permet aux utilisateurs d'ouvri
 - Prisma
 - Postgres
 - Tailwind CSS
-- Shadcn/UI

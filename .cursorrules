@@ -16,7 +16,6 @@
     - On utilise NextAuth pour la gestion des utilisateurs
     - On utilise Prisma pour la gestion des données
     - On utilise TailwindCSS pour le design
-    - On utilise Shadcn/UI pour les composants
     - On utilise Next.js pour le serveur
     - On utilise Next.js pour le client
     - Quoi qu'il arrive, on garde l'architecture NextJs avec les pages et les API. On ne change pas l'architecture de NextJs.

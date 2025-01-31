@@ -66,7 +66,19 @@ export const authOptions: AuthOptions = {
     })
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 jours
+  },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      }
+    }
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -106,7 +118,7 @@ export const authOptions: AuthOptions = {
     signIn: '/login',
     error: '/login',
   },
-  debug: true
+  debug: process.env.NODE_ENV === 'development'
 };
 
 export default NextAuth(authOptions); 

@@ -7,7 +7,7 @@ interface CardTemplate {
   description: string;
   quote?: string;
   power: number;
-  rarity: 'LEGENDARY' | 'RARE' | 'UNCOMMON' | 'COMMON';
+  rarity: 'LEGENDARY' | 'RARE' | 'UNCOMMON' | 'COMMON' | 'EPIC';
 }
 
 const cardTemplates: CardTemplate[] = [
@@ -25,6 +25,22 @@ const cardTemplates: CardTemplate[] = [
     quote: "La mort n'est qu'un nouveau départ",
     power: 9,
     rarity: "LEGENDARY"
+  },
+
+  // Cartes Épiques
+  {
+    name: "Titan de Cristal",
+    description: "Un colosse de cristal pur aux pouvoirs mystiques",
+    quote: "La lumière est ma force, l'obscurité ma crainte",
+    power: 8,
+    rarity: "EPIC"
+  },
+  {
+    name: "Sorcière des Abysses",
+    description: "Maîtresse des arts sombres et des malédictions anciennes",
+    quote: "Les ténèbres m'appellent, et je réponds",
+    power: 8,
+    rarity: "EPIC"
   },
 
   // Cartes Rares
@@ -78,6 +94,8 @@ async function main() {
   // Nettoyer la base de données dans le bon ordre (pour respecter les contraintes de clé étrangère)
   await prisma.$transaction([
     // Supprimer d'abord les tables avec des clés étrangères
+    prisma.$executeRaw`DELETE FROM "trade_cards"`,
+    prisma.$executeRaw`DELETE FROM "trade_offers"`,
     prisma.$executeRaw`DELETE FROM "CardFromBooster"`,
     prisma.$executeRaw`DELETE FROM "CollectedCard"`,
     prisma.$executeRaw`DELETE FROM "BoosterPurchase"`,
@@ -92,21 +110,21 @@ async function main() {
   await prisma.boosterConfig.createMany({
     data: [
       {
-        type: 'STANDARD',
+        type: "STANDARD",
         cost: 100,
-        cardCount: 4,
+        cardCount: 4
       },
       {
-        type: 'RARE',
+        type: "RARE",
         cost: 170,
-        cardCount: 4,
+        cardCount: 4
       },
       {
-        type: 'LEGENDARY',
+        type: "EPIC",
         cost: 500,
-        cardCount: 1,
-      },
-    ],
+        cardCount: 1
+      }
+    ]
   });
 
   console.log('Configurations de boosters créées');

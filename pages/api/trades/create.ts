@@ -1,24 +1,31 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth';
 import prisma from '../../../lib/prisma';
-import { TradeStatus } from '@prisma/client';
+import { authOptions } from '../auth/[...nextauth]';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Méthode non autorisée' });
   }
 
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) {
     return res.status(401).json({ message: 'Non authentifié' });
   }
 
   try {
     const { recipientId, offeredCards, requestedCards, message } = req.body;
+    const initiatorId = Number(session.user.id);
+    const recipientIdNumber = Number(recipientId);
+
+    // Vérifier que l'initiateur n'essaie pas d'échanger avec lui-même
+    if (initiatorId === recipientIdNumber) {
+      return res.status(400).json({ message: 'Vous ne pouvez pas échanger avec vous-même' });
+    }
     
     console.log('Création d\'échange - Données reçues:', {
-      initiatorId: session.user.id,
-      recipientId,
+      initiatorId,
+      recipientId: recipientIdNumber,
       offeredCards,
       requestedCards,
       message
@@ -27,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Vérifier que l'initiateur possède les cartes offertes
     const userCards = await prisma.collectedCard.findMany({
       where: {
-        userId: session.user.id,
+        userId: initiatorId,
         OR: offeredCards.map((card: { cardId: number, isShiny: boolean, quantity: number }) => ({
           cardId: card.cardId,
           isShiny: card.isShiny,
@@ -47,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Vérifier que le destinataire possède les cartes demandées
     const recipientCards = await prisma.collectedCard.findMany({
       where: {
-        userId: recipientId,
+        userId: recipientIdNumber,
         OR: requestedCards.map((card: { cardId: number, isShiny: boolean, quantity: number }) => ({
           cardId: card.cardId,
           isShiny: card.isShiny,
@@ -67,34 +74,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Créer l'offre d'échange
     const tradeOffer = await prisma.tradeOffer.create({
       data: {
-        initiatorId: session.user.id,
-        recipientId: Number(recipientId), // S'assurer que recipientId est un nombre
+        initiatorId,
+        recipientId: recipientIdNumber,
         message,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Expire dans 24h
-        offeredCards: {
-          create: offeredCards.map((card: { cardId: number, isShiny: boolean, quantity: number }) => ({
-            cardId: card.cardId,
-            isShiny: card.isShiny,
-            quantity: card.quantity,
-            isOffered: true
-          }))
-        },
-        requestedCards: {
-          create: requestedCards.map((card: { cardId: number, isShiny: boolean, quantity: number }) => ({
-            cardId: card.cardId,
-            isShiny: card.isShiny,
-            quantity: card.quantity,
-            isOffered: false
-          }))
+        cards: {
+          create: [
+            ...offeredCards.map((card: { cardId: number, isShiny: boolean, quantity: number }) => ({
+              cardId: card.cardId,
+              isShiny: card.isShiny,
+              quantity: card.quantity,
+              isOffered: true
+            })),
+            ...requestedCards.map((card: { cardId: number, isShiny: boolean, quantity: number }) => ({
+              cardId: card.cardId,
+              isShiny: card.isShiny,
+              quantity: card.quantity,
+              isOffered: false
+            }))
+          ]
         }
       },
       include: {
-        offeredCards: {
-          include: {
-            card: true
+        initiator: {
+          select: {
+            id: true,
+            username: true
           }
         },
-        requestedCards: {
+        recipient: {
+          select: {
+            id: true,
+            username: true
+          }
+        },
+        cards: {
           include: {
             card: true
           }
@@ -102,9 +116,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    console.log('Échange créé avec succès:', tradeOffer.id);
-
-    // TODO: Envoyer une notification au destinataire
+    console.log('Échange créé avec succès:', {
+      id: tradeOffer.id,
+      initiatorId: tradeOffer.initiatorId,
+      recipientId: tradeOffer.recipientId,
+      initiatorUsername: tradeOffer.initiator.username,
+      recipientUsername: tradeOffer.recipient.username
+    });
 
     res.status(200).json(tradeOffer);
   } catch (error) {

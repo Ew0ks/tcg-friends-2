@@ -59,7 +59,7 @@ const Card: React.FC<CardProps> = ({
       )}
 
       {/* Bulle de puissance */}
-      <div className={`absolute -top-3 -right-3 w-10 h-10 rounded-full bg-game-accent flex items-center justify-center border-2 border-game-dark shadow-lg ${isShiny ? 'power-bubble-shine' : ''}`}>
+      <div className={`absolute -top-3 -right-3 w-10 h-10 rounded-full bg-game-accent flex items-center justify-center border-2 border-game-dark shadow-lg z-10 ${isShiny ? 'power-bubble-shine' : ''}`}>
         <span className="text-lg font-bold text-game-dark">{power}</span>
       </div>
 
@@ -102,6 +102,8 @@ const Card: React.FC<CardProps> = ({
 const getRarityStyle = (rarity: string | Rarity) => {
   switch (rarity) {
     case 'LEGENDARY':
+      return 'bg-gradient-to-br from-yellow-900 to-game-dark';
+    case 'EPIC':
       return 'bg-gradient-to-br from-purple-900 to-game-dark';
     case 'RARE':
       return 'bg-gradient-to-br from-blue-900 to-game-dark';
@@ -115,6 +117,8 @@ const getRarityStyle = (rarity: string | Rarity) => {
 const getRarityTextColor = (rarity: string | Rarity) => {
   switch (rarity) {
     case 'LEGENDARY':
+      return 'text-yellow-400';
+    case 'EPIC':
       return 'text-purple-400';
     case 'RARE':
       return 'text-blue-400';

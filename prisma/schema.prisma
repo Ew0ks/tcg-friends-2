@@ -11,13 +11,15 @@ enum Rarity {
   COMMON
   UNCOMMON
   RARE
+  EPIC
   LEGENDARY
 }
 
 enum BoosterType {
   STANDARD
   RARE
-  LEGENDARY
+  EPIC
+  MAXI
 }
 
 enum UserRole {
@@ -120,8 +122,9 @@ model TradeOffer {
   initiator     User        @relation("InitiatedTrades", fields: [initiatorId], references: [id])
   recipient     User        @relation("ReceivedTrades", fields: [recipientId], references: [id])
   
-  offeredCards  TradeCard[] @relation("OfferedCards")
-  requestedCards TradeCard[] @relation("RequestedCards")
+  cards         TradeCard[]
+
+  @@map("trade_offers")
 }
 
 model TradeCard {
@@ -132,7 +135,8 @@ model TradeCard {
   quantity      Int         @default(1)
   isOffered     Boolean     @default(true)
   
-  tradeOffer    TradeOffer  @relation("OfferedCards", fields: [tradeOfferId], references: [id], map: "offered_cards")
-  requestedIn   TradeOffer  @relation("RequestedCards", fields: [tradeOfferId], references: [id], map: "requested_cards")
+  tradeOffer    TradeOffer  @relation(fields: [tradeOfferId], references: [id])
   card          Card        @relation(fields: [cardId], references: [id])
+
+  @@map("trade_cards")
 }

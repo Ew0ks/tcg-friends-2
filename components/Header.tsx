@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { FaCoins, FaUserCircle, FaChevronDown } from 'react-icons/fa';
-import { Bars3Icon, HomeIcon } from '@heroicons/react/24/outline';
+import { FaCoins, FaUserCircle } from 'react-icons/fa';
+import { Bars3Icon } from '@heroicons/react/24/outline';
 import { User } from 'next-auth';
 import MobileMenu from './MobileMenu';
+import Navigation from './Navigation';
+import { GearIcon } from '@radix-ui/react-icons';
 
 interface HeaderProps {
   credits: number;
@@ -14,8 +16,28 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [pendingTrades, setPendingTrades] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const fetchPendingTrades = async () => {
+      try {
+        const response = await fetch('/api/trades/list?type=received&status=PENDING');
+        const data = await response.json();
+        setPendingTrades(data.length);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des échanges en attente:', error);
+      }
+    };
+
+    if (user) {
+      fetchPendingTrades();
+      // Rafraîchir toutes les 30 secondes
+      const interval = setInterval(fetchPendingTrades, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -44,88 +66,6 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
     }
   }, [isMobileMenuOpen]);
 
-  const DesktopNavLinks = () => {
-    const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
-    const collectionsRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (
-          collectionsRef.current &&
-          !collectionsRef.current.contains(event.target as Node)
-        ) {
-          setIsCollectionsOpen(false);
-        }
-      };
-
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, []);
-
-    return (
-      <div className="flex items-center space-x-4">
-        <Link href="/" className="p-2 text-game-text hover:text-game-accent transition-colors rounded-lg hover:bg-game-dark">
-          <HomeIcon className="h-5 w-5" />
-        </Link>
-        <div className="h-4 w-px bg-game-dark/50" />
-        
-        {/* Menu Collections */}
-        <div className="relative" ref={collectionsRef}>
-          <button
-            onClick={() => setIsCollectionsOpen(!isCollectionsOpen)}
-            className="p-2 text-game-text hover:text-game-accent transition-colors rounded-lg hover:bg-game-dark flex items-center gap-1"
-          >
-            Collections
-            <FaChevronDown className={`w-3 h-3 transition-transform ${isCollectionsOpen ? 'rotate-180' : ''}`} />
-          </button>
-          
-          {isCollectionsOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-game-dark rounded-lg shadow-xl border border-game-accent/10 overflow-hidden min-w-[160px]">
-              <Link
-                href="/collection"
-                className="block px-4 py-2 text-game-text hover:bg-game-light hover:text-game-accent transition-colors"
-                onClick={() => setIsCollectionsOpen(false)}
-              >
-                Ma collection
-              </Link>
-              <div className="h-px bg-game-light/20 mx-2" />
-              <Link
-                href="/collections"
-                className="block px-4 py-2 text-game-text hover:bg-game-light hover:text-game-accent transition-colors"
-                onClick={() => setIsCollectionsOpen(false)}
-              >
-                Collections publiques
-              </Link>
-            </div>
-          )}
-        </div>
-
-        <Link href="/open-boosters" className="p-2 text-game-text hover:text-game-accent transition-colors rounded-lg hover:bg-game-dark">
-          Boosters
-        </Link>
-        <Link href="/merchant" className="p-2 text-game-text hover:text-game-accent transition-colors rounded-lg hover:bg-game-dark">
-          Marchand
-        </Link>
-        <Link href="/trades" className="p-2 text-game-text hover:text-game-accent transition-colors rounded-lg hover:bg-game-dark">
-          Échanges
-        </Link>
-        {user && user.role === 'ADMIN' && (
-          <>
-            <div className="h-4 w-px bg-game-dark/50" />
-            <Link
-              href="/admin/users"
-              className="p-2 text-game-success hover:text-game-accent transition-colors rounded-lg hover:bg-game-dark"
-            >
-              Admin
-            </Link>
-          </>
-        )}
-      </div>
-    );
-  };
-
   return (
     <header className="bg-game-light shadow-lg">
       <div className="max-w-7xl mx-auto px-4 py-3">
@@ -145,7 +85,7 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
 
           {/* Navigation desktop */}
           <div className="hidden md:flex flex-1 items-center justify-center">
-            <DesktopNavLinks />
+            <Navigation user={user} pendingTrades={pendingTrades} />
           </div>
 
           {/* User info */}
@@ -167,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
               {isMenuOpen && (
                 <div 
                   ref={menuRef}
-                  className="absolute right-0 top-full mt-2 w-48 bg-game-dark rounded-lg shadow-xl border border-game-accent/10 overflow-hidden"
+                  className="absolute right-0 top-full mt-2 w-48 bg-game-dark rounded-lg shadow-xl border border-game-accent/10 overflow-hidden z-50"
                 >
                   <div className="py-1">
                     <Link
@@ -201,6 +141,7 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
         onClose={() => setIsMobileMenuOpen(false)}
         onLogout={onLogout}
         user={user}
+        pendingTrades={pendingTrades}
       />
     </header>
   );

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Card from '../components/Card';
 import { Rarity } from '@prisma/client';
+import RarityFilters from '../components/RarityFilters';
 
 // Définir le type pour une carte collectée
 interface CollectedCard {
@@ -9,7 +10,7 @@ interface CollectedCard {
   card: {
     id: number;
     name: string;
-    rarity: string;
+    rarity: Rarity;
     description: string;
     quote?: string;
     power: number;
@@ -24,7 +25,7 @@ const Collection: React.FC = () => {
   const { data: session } = useSession();
   const [collectedCards, setCollectedCards] = useState<CollectedCard[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRarity, setSelectedRarity] = useState<string>('');
+  const [selectedRarity, setSelectedRarity] = useState<Rarity | null>(null);
   const [shinyFilter, setShinyFilter] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<string>('rarity-desc');
   const [stats, setStats] = useState({
@@ -42,7 +43,7 @@ const Collection: React.FC = () => {
       // Construire l'URL avec les filtres
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
-      if (selectedRarity) params.append('rarity', selectedRarity);
+      if (selectedRarity) params.append('rarity', selectedRarity.toString());
       if (shinyFilter) params.append('shiny', shinyFilter);
       params.append('sort', sortOrder);
 
@@ -51,17 +52,12 @@ const Collection: React.FC = () => {
       setCollectedCards(data.cards);
 
       // Calculer les statistiques
-      const totalCards = data.cards.reduce((acc: number, card: CollectedCard) => acc + card.quantity, 0);
-      const uniqueCards = data.cards.length;
-      const shinyCards = data.cards.filter((card: CollectedCard) => card.isShiny).length;
-      const completionPercentage = Math.round((data.stats.totalCollectedCards / data.stats.totalPossibleCards) * 100);
-
       setStats({
-        totalCards,
-        uniqueCards,
-        shinyCards,
+        totalCards: data.stats.totalCards,
+        uniqueCards: data.stats.uniqueCards,
+        shinyCards: data.stats.shinyCards,
         missingCards: data.stats.missingCards,
-        completionPercentage,
+        completionPercentage: data.stats.completionPercentage,
       });
     };
 
@@ -165,54 +161,6 @@ const Collection: React.FC = () => {
         </div>
       </div>
 
-      {/* Filtres */}
-      <div className="mb-8 game-panel p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-game-muted mb-2">
-              Rechercher
-            </label>
-            <input
-              type="text"
-              className="game-input w-full"
-              placeholder="Rechercher une carte..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-game-muted mb-2">
-              Rareté
-            </label>
-            <select
-              className="game-input w-full"
-              value={selectedRarity}
-              onChange={(e) => setSelectedRarity(e.target.value)}
-            >
-              <option value="">Toutes les raretés</option>
-              <option value={Rarity.COMMON}>Commune</option>
-              <option value={Rarity.UNCOMMON}>Peu commune</option>
-              <option value={Rarity.RARE}>Rare</option>
-              <option value={Rarity.LEGENDARY}>Légendaire</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-game-muted mb-2">
-              Version
-            </label>
-            <select
-              className="game-input w-full"
-              value={shinyFilter}
-              onChange={(e) => setShinyFilter(e.target.value)}
-            >
-              <option value="">Toutes les versions</option>
-              <option value="false">Normal</option>
-              <option value="true">Shiny</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
       {/* Stats de collection */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="game-panel text-center">
@@ -237,8 +185,45 @@ const Collection: React.FC = () => {
         </div>
       </div>
 
+      <div className="mb-8 game-panel p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-game-muted mb-2">
+              Rechercher
+            </label>
+            <input
+              type="text"
+              className="game-input w-full"
+              placeholder="Rechercher une carte..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-game-muted mb-2">
+              Version
+            </label>
+            <select
+              className="game-input w-full"
+              value={shinyFilter}
+              onChange={(e) => setShinyFilter(e.target.value)}
+            >
+              <option value="">Toutes les versions</option>
+              <option value="false">Normal</option>
+              <option value="true">Shiny</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-game-accent">Votre Collection</h2>
+        <div className="flex items-center gap-6">
+          <h2 className="text-2xl font-bold text-game-accent">Votre Collection</h2>
+          <RarityFilters
+            selectedRarity={selectedRarity}
+            onChange={setSelectedRarity}
+          />
+        </div>
         <select
           className="game-input ml-4"
           value={sortOrder}
@@ -255,15 +240,22 @@ const Collection: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {collectedCards.map((collectedCard) => (
-          <Card
-            key={`${collectedCard.card.id}-${collectedCard.isShiny}`}
-            {...collectedCard.card}
-            isShiny={collectedCard.isShiny}
-            isNew={collectedCard.isNew}
-            quantity={collectedCard.quantity}
-            className="hover:scale-105 transition-transform"
-            onHover={() => handleCardHover(collectedCard.card.id, collectedCard.isShiny)}
-          />
+          <div 
+            key={`${collectedCard.card.id}-${collectedCard.isShiny}`} 
+            className="relative"
+          >
+            <Card
+              {...collectedCard.card}
+              isShiny={collectedCard.isShiny}
+              isNew={collectedCard.isNew}
+              onHover={() => handleCardHover(collectedCard.card.id, collectedCard.isShiny)}
+            />
+            {collectedCard.quantity > 1 && (
+              <div className="absolute bottom-[-10px] right-[10px] bg-game-accent text-white px-2 py-1 rounded">
+                x{collectedCard.quantity}
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </div>

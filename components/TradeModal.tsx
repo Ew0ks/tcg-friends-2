@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Card as CardType } from '@prisma/client';
+import { Card as CardType, Rarity } from '@prisma/client';
 import Card from './Card';
+import Modal from './Modal';
+import RarityFilters from './RarityFilters';
 
 interface TradeModalProps {
   isOpen: boolean;
@@ -39,6 +41,8 @@ const TradeModal: React.FC<TradeModalProps> = ({
     [key: string]: number;
   }>({});
   const [message, setMessage] = useState('');
+  const [offeredRarityFilter, setOfferedRarityFilter] = useState<Rarity | null>(null);
+  const [requestedRarityFilter, setRequestedRarityFilter] = useState<Rarity | null>(null);
 
   const handleCardSelection = (
     cardId: number,
@@ -118,110 +122,149 @@ const TradeModal: React.FC<TradeModalProps> = ({
     onClose();
   };
 
-  if (!isOpen) return null;
+  const filteredUserCards = offeredRarityFilter
+    ? userCards.filter(({ card }) => card.rarity === offeredRarityFilter)
+    : userCards;
+
+  const filteredRecipientCards = requestedRarityFilter
+    ? recipientCards.filter(({ card }) => card.rarity === requestedRarityFilter)
+    : recipientCards;
+
+  const footer = (
+    <div className="flex justify-end gap-4">
+      <button
+        onClick={onClose}
+        className="px-4 py-2 bg-game-light rounded hover:bg-opacity-80"
+      >
+        Annuler
+      </button>
+      <button
+        onClick={handleSubmit}
+        disabled={
+          Object.keys(selectedOfferedCards).length === 0 ||
+          Object.keys(selectedRequestedCards).length === 0
+        }
+        className="px-4 py-2 bg-game-accent text-white rounded hover:bg-opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Proposer l&apos;échange
+      </button>
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-game-dark p-6 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-game-accent">Proposer un échange</h2>
-          <button
-            onClick={onClose}
-            className="text-game-muted hover:text-white"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-xl font-bold text-game-accent mb-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Proposer un échange"
+      maxWidth="full"
+      footer={footer}
+    >
+      <div className="flex flex-col gap-6">
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-game-accent">
               Vos cartes à offrir
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[50vh] overflow-y-auto">
-              {userCards.map(({ card, isShiny, quantity }) => {
-                const key = `${card.id}-${isShiny}`;
-                const selectedQuantity = selectedOfferedCards[key] || 0;
-
-                return (
-                  <div key={key} className="relative group">
-                    <Card {...card} isShiny={isShiny} />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 flex gap-2">
-                        {selectedQuantity > 0 && (
-                          <button
-                            onClick={() => handleCardDeselection(card.id, isShiny, true)}
-                            className="bg-red-500 text-white px-3 py-1 rounded"
-                          >
-                            -
-                          </button>
-                        )}
-                        {selectedQuantity < quantity && (
-                          <button
-                            onClick={() => handleCardSelection(card.id, isShiny, quantity, true)}
-                            className="bg-green-500 text-white px-3 py-1 rounded"
-                          >
-                            +
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {selectedQuantity > 0 && (
-                      <div className="absolute top-2 right-2 bg-game-accent text-white px-2 py-1 rounded">
-                        x{selectedQuantity}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <RarityFilters
+              selectedRarity={offeredRarityFilter}
+              onChange={setOfferedRarityFilter}
+            />
           </div>
+          <div className="flex gap-2 overflow-x-auto pb-4 snap-x">
+            {filteredUserCards.map(({ card, isShiny, quantity }) => {
+              const key = `${card.id}-${isShiny}`;
+              const selectedQuantity = selectedOfferedCards[key] || 0;
 
-          <div>
-            <h3 className="text-xl font-bold text-game-accent mb-4">
-              Cartes demandées
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[50vh] overflow-y-auto">
-              {recipientCards.map(({ card, isShiny, quantity }) => {
-                const key = `${card.id}-${isShiny}`;
-                const selectedQuantity = selectedRequestedCards[key] || 0;
-
-                return (
-                  <div key={key} className="relative group">
-                    <Card {...card} isShiny={isShiny} />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 flex gap-2">
-                        {selectedQuantity > 0 && (
-                          <button
-                            onClick={() => handleCardDeselection(card.id, isShiny, false)}
-                            className="bg-red-500 text-white px-3 py-1 rounded"
-                          >
-                            -
-                          </button>
-                        )}
-                        {selectedQuantity < quantity && (
-                          <button
-                            onClick={() => handleCardSelection(card.id, isShiny, quantity, false)}
-                            className="bg-green-500 text-white px-3 py-1 rounded"
-                          >
-                            +
-                          </button>
-                        )}
-                      </div>
+              return (
+                <div 
+                  key={key} 
+                  className="relative group shrink-0 snap-start scale-50 hover:scale-55 -mx-12 -my-20 transition-all duration-200"
+                >
+                  <Card {...card} isShiny={isShiny} />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 flex gap-2">
+                      {selectedQuantity > 0 && (
+                        <button
+                          onClick={() => handleCardDeselection(card.id, isShiny, true)}
+                          className="bg-red-500 text-white px-3 py-1 rounded"
+                        >
+                          -
+                        </button>
+                      )}
+                      {selectedQuantity < quantity && (
+                        <button
+                          onClick={() => handleCardSelection(card.id, isShiny, quantity, true)}
+                          className="bg-green-500 text-white px-3 py-1 rounded"
+                        >
+                          +
+                        </button>
+                      )}
                     </div>
-                    {selectedQuantity > 0 && (
-                      <div className="absolute top-2 right-2 bg-game-accent text-white px-2 py-1 rounded">
-                        x{selectedQuantity}
-                      </div>
-                    )}
                   </div>
-                );
-              })}
-            </div>
+                  {selectedQuantity > 0 && (
+                    <div className="absolute top-2 right-2 bg-game-accent text-white px-2 py-1 rounded">
+                      x{selectedQuantity}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="mt-6">
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-game-accent">
+              Cartes demandées
+            </h3>
+            <RarityFilters
+              selectedRarity={requestedRarityFilter}
+              onChange={setRequestedRarityFilter}
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-4 snap-x">
+            {filteredRecipientCards.map(({ card, isShiny, quantity }) => {
+              const key = `${card.id}-${isShiny}`;
+              const selectedQuantity = selectedRequestedCards[key] || 0;
+
+              return (
+                <div 
+                  key={key} 
+                  className="relative group shrink-0 snap-start scale-50 hover:scale-55 -mx-12 -my-20 transition-all duration-200"
+                >
+                  <Card {...card} isShiny={isShiny} />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 flex gap-2">
+                      {selectedQuantity > 0 && (
+                        <button
+                          onClick={() => handleCardDeselection(card.id, isShiny, false)}
+                          className="bg-red-500 text-white px-3 py-1 rounded"
+                        >
+                          -
+                        </button>
+                      )}
+                      {selectedQuantity < quantity && (
+                        <button
+                          onClick={() => handleCardSelection(card.id, isShiny, quantity, false)}
+                          className="bg-green-500 text-white px-3 py-1 rounded"
+                        >
+                          +
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {selectedQuantity > 0 && (
+                    <div className="absolute top-2 right-2 bg-game-accent text-white px-2 py-1 rounded">
+                      x{selectedQuantity}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-game-muted mb-2">
             Message (optionnel)
           </label>
@@ -232,27 +275,8 @@ const TradeModal: React.FC<TradeModalProps> = ({
             placeholder="Laissez un message au destinataire..."
           />
         </div>
-
-        <div className="mt-6 flex justify-end gap-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-game-light rounded hover:bg-opacity-80"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={
-              Object.keys(selectedOfferedCards).length === 0 ||
-              Object.keys(selectedRequestedCards).length === 0
-            }
-            className="px-4 py-2 bg-game-accent text-white rounded hover:bg-opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Proposer l'échange
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

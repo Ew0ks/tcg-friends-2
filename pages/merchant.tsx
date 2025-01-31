@@ -5,6 +5,8 @@ import { Rarity } from '@prisma/client';
 import { calculatePrice, getPriceConfig } from '../utils/merchantPrices';
 import Card, { CardProps } from '../components/Card';
 import SaleConfirmationModal from '../components/SaleConfirmationModal';
+import RarityFilters from '../components/RarityFilters';
+import { toast } from 'sonner';
 
 interface CollectedCard extends CardProps {
   quantity: number;
@@ -29,6 +31,7 @@ interface SaleRecap {
   COMMON: number;
   UNCOMMON: number;
   RARE: number;
+  EPIC: number;
   LEGENDARY: number;
   shinyCount: number;
   totalCards: number;
@@ -54,7 +57,10 @@ const MerchantPage = () => {
   useEffect(() => {
     const fetchCollection = async () => {
       try {
-        const response = await fetch('/api/collection', {
+        const params = new URLSearchParams();
+        if (selectedRarity) params.append('rarity', selectedRarity.toString());
+
+        const response = await fetch(`/api/collection?${params.toString()}`, {
           credentials: 'include'
         });
         const data = (await response.json()) as CollectionApiResponse;
@@ -76,7 +82,7 @@ const MerchantPage = () => {
     if (session) {
       fetchCollection();
     }
-  }, [session]);
+  }, [session, selectedRarity]);
 
   // Calculer le prix total
   useEffect(() => {
@@ -131,10 +137,6 @@ const MerchantPage = () => {
     });
   };
 
-  const filteredCollection = selectedRarity
-    ? collection.filter(card => card.rarity === selectedRarity)
-    : collection;
-
   if (status === 'loading' || isLoading) {
     return <div>Chargement...</div>;
   }
@@ -148,6 +150,7 @@ const MerchantPage = () => {
       COMMON: 0,
       UNCOMMON: 0,
       RARE: 0,
+      EPIC: 0,
       LEGENDARY: 0,
       shinyCount: 0,
       totalCards: 0
@@ -168,73 +171,76 @@ const MerchantPage = () => {
     setIsConfirmationOpen(true);
   };
 
-  const handleSell = async () => {
-    setIsConfirmationOpen(false);
-
+  const handleSellCards = async () => {
     try {
       const response = await fetch('/api/merchant/sell', {
         method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cards: selectedCards
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cards: selectedCards }),
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
-        // Rafraîchir la session pour mettre à jour les crédits
-        await updateSession();
-        
-        // Rafraîchir la collection
-        const collectionResponse = await fetch('/api/collection', {
-          credentials: 'include'
-        });
-        const collectionData = (await collectionResponse.json()) as CollectionApiResponse;
-        if (collectionData.cards) {
-          setCollection(collectionData.cards.map((item) => ({
-            ...item.card,
-            quantity: item.quantity,
-            isShiny: item.isShiny,
-            isNew: false
-          })));
-        }
-        
-        // Réinitialiser la sélection
-        setSelectedCards([]);
-      } else {
-        throw new Error(data.error);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la vente');
       }
+
+      const data = await response.json();
+      toast.success(`Vente réussie ! Vous avez gagné ${data.credits} crédits`);
+      
+      // Rafraîchir la session pour mettre à jour les crédits
+      await updateSession();
+      
+      // Rafraîchir la collection
+      const collectionResponse = await fetch('/api/collection', {
+        credentials: 'include'
+      });
+      const collectionData = (await collectionResponse.json()) as CollectionApiResponse;
+      if (collectionData.cards) {
+        setCollection(collectionData.cards.map((item) => ({
+          ...item.card,
+          quantity: item.quantity,
+          isShiny: item.isShiny,
+          isNew: false
+        })));
+      }
+      
+      // Réinitialiser la sélection
+      setSelectedCards([]);
     } catch (error) {
       console.error('Erreur lors de la vente:', error);
+      toast.error('Erreur lors de la vente des cartes');
     }
   };
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold text-game-accent mb-8">Marchand</h1>
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-game-accent">Marchand</h1>
+        <RarityFilters
+          selectedRarity={selectedRarity}
+          onChange={setSelectedRarity}
+        />
+      </div>
       
       {/* Grille des prix */}
       <div className="bg-game-dark rounded-lg p-4 mb-4">
         <h2 className="text-xl font-bold text-game-accent mb-2">Prix de rachat</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 text-sm">
           {Object.entries(Rarity).map(([key, rarity]) => {
             const config = getPriceConfig(rarity);
             return (
               <div key={key} className="bg-game-light px-3 py-2 rounded-lg">
                 <div className="font-bold mb-1">{rarity}</div>
+                <div className="flex flex-col gap-1">
                 <div className="flex justify-between text-game-muted">
-                  <span>1x</span>
+                  <span>Unité</span>
                   <span>{config.single}💰</span>
                 </div>
                 <div className="flex justify-between text-game-muted">
-                  <span>{config.bulkQuantity}x</span>
+                  <span>Lot de {config.bulkQuantity}</span>
                   <span>{config.bulk}💰</span>
                 </div>
-                <div className="text-yellow-400 text-xs mt-1">Shiny ×1.5</div>
+                  <div className="text-yellow-400 text-xs mt-1 text-center">Version Shiny ×1.5</div>
+                </div>
               </div>
             );
           })}
@@ -247,36 +253,9 @@ const MerchantPage = () => {
         <div className="lg:col-span-2 bg-game-dark rounded-lg p-6">
           <h2 className="text-xl font-bold text-game-accent mb-4">Collection</h2>
           
-          {/* Filtres par rareté */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <button
-              onClick={() => setSelectedRarity(null)}
-              className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                selectedRarity === null 
-                  ? 'bg-game-accent text-white' 
-                  : 'bg-game-light hover:bg-game-accent/50'
-              }`}
-            >
-              Tout
-            </button>
-            {Object.values(Rarity).map((rarity) => (
-              <button
-                key={rarity}
-                onClick={() => setSelectedRarity(rarity)}
-                className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                  selectedRarity === rarity 
-                    ? 'bg-game-accent text-white' 
-                    : 'bg-game-light hover:bg-game-accent/50'
-                }`}
-              >
-                {rarity}
-              </button>
-            ))}
-          </div>
-
           {/* Grille de cartes */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2">
-            {filteredCollection.map((card) => {
+          <div className="flex flex-wrap gap-4">
+            {collection.map((card) => {
               const selectedQuantity = selectedCards.find(
                 c => c.id === card.id && c.isShiny === card.isShiny
               )?.quantity || 0;
@@ -285,23 +264,28 @@ const MerchantPage = () => {
               return (
                 <div
                   key={`${card.id}-${card.isShiny}`}
-                  className={`relative group cursor-pointer scale-50 hover:scale-55 -mx-5 -my-20 ${
+                  className={`relative group cursor-pointer shrink-0 scale-50 hover:scale-55 -mx-16 -my-24 transition-all duration-200 ${
                     remainingQuantity === 0 ? 'opacity-50' : ''
-                  } transition-all duration-200`}
+                  }`}
                   onClick={() => remainingQuantity > 0 && handleCardSelect(card)}
                 >
                   <Card {...card} quantity={remainingQuantity} />
+                  {remainingQuantity > 1 && (
+                    <div className="absolute top-2 right-2 bg-game-accent text-white px-2 py-1 rounded">
+                      x{remainingQuantity}
+                    </div>
+                  )}
 
                   {/* Prix de vente */}
                   <div className="
-                    absolute bottom-0 left-0 right-0 
-                    bg-gradient-to-t from-black/80 to-transparent
-                    p-2 text-center opacity-0 group-hover:opacity-100
-                    transition-opacity duration-200
+                    absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30
+                    flex items-center justify-center transition-all
                   ">
-                    <span className="text-sm font-bold text-yellow-400">
-                      {calculatePrice(card.rarity as Rarity, 1, card.isShiny)} crédits
-                    </span>
+                    <div className="opacity-0 group-hover:opacity-100 text-center">
+                      <span className="text-lg font-bold text-yellow-400 bg-black/50 px-3 py-1 rounded">
+                        {calculatePrice(card.rarity as Rarity, 1, card.isShiny)} 💰
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -384,7 +368,7 @@ const MerchantPage = () => {
       <SaleConfirmationModal
         isOpen={isConfirmationOpen}
         onClose={() => setIsConfirmationOpen(false)}
-        onConfirm={handleSell}
+        onConfirm={handleSellCards}
         recap={getSaleRecap()}
         totalPrice={totalPrice}
       />

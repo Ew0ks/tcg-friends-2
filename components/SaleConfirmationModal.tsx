@@ -4,6 +4,7 @@ interface SaleRecap {
   COMMON: number;
   UNCOMMON: number;
   RARE: number;
+  EPIC: number;
   LEGENDARY: number;
   shinyCount: number;
   totalCards: number;
@@ -28,6 +29,7 @@ const SaleConfirmationModal = ({
   if (recap.COMMON > 0) parts.push(`${recap.COMMON} carte${recap.COMMON > 1 ? 's' : ''} commune${recap.COMMON > 1 ? 's' : ''}`);
   if (recap.UNCOMMON > 0) parts.push(`${recap.UNCOMMON} carte${recap.UNCOMMON > 1 ? 's' : ''} peu commune${recap.UNCOMMON > 1 ? 's' : ''}`);
   if (recap.RARE > 0) parts.push(`${recap.RARE} carte${recap.RARE > 1 ? 's' : ''} rare${recap.RARE > 1 ? 's' : ''}`);
+  if (recap.EPIC > 0) parts.push(`${recap.EPIC} carte${recap.EPIC > 1 ? 's' : ''} épique${recap.EPIC > 1 ? 's' : ''}`);
   if (recap.LEGENDARY > 0) parts.push(`${recap.LEGENDARY} carte${recap.LEGENDARY > 1 ? 's' : ''} légendaire${recap.LEGENDARY > 1 ? 's' : ''}`);
 
   const cardsRecap = parts.join(', ').replace(/,([^,]*)$/, ' et$1');

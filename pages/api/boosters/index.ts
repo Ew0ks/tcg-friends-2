@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, BoosterType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -30,14 +30,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-function getBoosterDescription(type: string): string {
+function getBoosterDescription(type: BoosterType): string {
   switch (type) {
-    case 'STANDARD':
+    case BoosterType.STANDARD:
       return '4 cartes dont au moins une peu commune';
-    case 'RARE':
+    case BoosterType.RARE:
       return '4 cartes dont au moins une rare';
-    case 'LEGENDARY':
-      return '1 carte légendaire garantie';
+    case BoosterType.EPIC:
+      return '1 carte épique ou légendaire garantie';
+    case BoosterType.MAXI:
+      return '8 cartes dont au moins une rare';
     default:
       return '';
   }

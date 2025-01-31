@@ -14,23 +14,32 @@ interface GeneratedCard {
 const RARITY_WEIGHTS = {
   [Rarity.COMMON]: 70,
   [Rarity.UNCOMMON]: 20,
-  [Rarity.RARE]: 9,
-  [Rarity.LEGENDARY]: 1,
+  [Rarity.RARE]: 8,
+  [Rarity.EPIC]: 1.5,
+  [Rarity.LEGENDARY]: 0.5,
 };
 
 // Chance d'obtenir une carte en version shiny
 const SHINY_CHANCE = 0.05;
 
 // Fonction pour déterminer une rareté aléatoire
-function getRandomRarity(minRarity?: Rarity): Rarity {
-  // Si c'est un booster légendaire, utiliser une logique spéciale
-  if (minRarity === Rarity.LEGENDARY) {
-    return Math.random() < 0.49 ? Rarity.LEGENDARY : getRandomRarity();
+function getRandomRarity(boosterType?: BoosterType): Rarity {
+  // Logique spéciale pour le booster épique
+  if (boosterType === BoosterType.EPIC) {
+    const roll = Math.random();
+    if (roll < 0.05) return Rarity.LEGENDARY;
+    if (roll < 0.50) return Rarity.EPIC;
+    // Pour les 50% restants, on utilise la distribution normale
   }
 
-  // Logique normale pour les autres boosters
+  // Logique pour les boosters standards, rares et maxi
   const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
   let random = Math.random() * total;
+
+  // Pour les boosters standards, rares et maxi, on vérifie la rareté minimale
+  const minRarity = boosterType === BoosterType.RARE || boosterType === BoosterType.MAXI ? Rarity.RARE :
+                   boosterType === BoosterType.STANDARD ? Rarity.UNCOMMON :
+                   undefined;
 
   for (const [rarity, weight] of Object.entries(RARITY_WEIGHTS)) {
     if (minRarity && rarity < minRarity) continue;
@@ -96,24 +105,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Générer les cartes selon le type de booster
     const cards: GeneratedCard[] = [];
-    let minRarity: Rarity | undefined;
-
-    switch (type) {
-      case BoosterType.STANDARD:
-        minRarity = Rarity.UNCOMMON;
-        break;
-      case BoosterType.RARE:
-        minRarity = Rarity.RARE;
-        break;
-      case BoosterType.LEGENDARY:
-        minRarity = Rarity.LEGENDARY;
-        break;
-    }
 
     // Générer les cartes
     for (let i = 0; i < boosterConfig.cardCount; i++) {
-      const isGuaranteedRarity = i === 0 && minRarity;
-      const rarity = isGuaranteedRarity && minRarity ? minRarity : getRandomRarity();
+      const rarity = getRandomRarity(type);
       const card = await getRandomCard(rarity);
       const isShiny = Math.random() < SHINY_CHANCE;
       cards.push({ card, isShiny });

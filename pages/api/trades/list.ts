@@ -1,13 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth';
 import prisma from '../../../lib/prisma';
+import { authOptions } from '../auth/[...nextauth]';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Méthode non autorisée' });
   }
 
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) {
     return res.status(401).json({ message: 'Non authentifié' });
   }
@@ -24,38 +25,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Filtrer par type d'échange (envoyé/reçu)
     if (type === 'sent') {
-      whereClause.initiatorId = session.user.id;
+      whereClause.initiatorId = Number(session.user.id);
     } else if (type === 'received') {
-      whereClause.recipientId = session.user.id;
+      whereClause.recipientId = Number(session.user.id);
     } else {
       // Type 'all' : montrer les échanges envoyés et reçus
       whereClause.OR = [
-        { initiatorId: session.user.id },
-        { recipientId: session.user.id }
+        { initiatorId: Number(session.user.id) },
+        { recipientId: Number(session.user.id) }
       ];
     }
 
-    console.log('Requête de recherche:', whereClause); // Pour le débogage
+    console.log('Session user ID:', session.user.id);
+    console.log('Requête de recherche:', whereClause);
 
     const trades = await prisma.tradeOffer.findMany({
       where: whereClause,
       include: {
         initiator: {
           select: {
+            id: true,
             username: true
           }
         },
         recipient: {
           select: {
+            id: true,
             username: true
           }
         },
-        offeredCards: {
-          include: {
-            card: true
-          }
-        },
-        requestedCards: {
+        cards: {
           include: {
             card: true
           }
@@ -66,7 +65,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    console.log('Échanges trouvés:', trades.length); // Pour le débogage
+    // Transformer les données pour séparer les cartes offertes et demandées
+    const transformedTrades = trades.map(trade => ({
+      ...trade,
+      offeredCards: trade.cards.filter(card => card.isOffered),
+      requestedCards: trade.cards.filter(card => !card.isOffered),
+      cards: undefined
+    }));
+
+    console.log('Échanges trouvés:', trades.length);
+    console.log('Détails des échanges:', trades.map(trade => ({
+      id: trade.id,
+      initiatorId: trade.initiatorId,
+      recipientId: trade.recipientId,
+      status: trade.status,
+      initiatorUsername: trade.initiator.username,
+      recipientUsername: trade.recipient.username
+    })));
 
     // Marquer les offres expirées
     const now = new Date();
@@ -92,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    res.status(200).json(trades);
+    res.status(200).json(transformedTrades);
   } catch (error) {
     console.error('Erreur lors de la récupération des échanges:', error);
     res.status(500).json({ message: 'Erreur lors de la récupération des échanges' });
