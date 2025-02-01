@@ -46,6 +46,7 @@ model User {
   totalBoostersOpened Int              @default(0)
   legendaryCardsFound Int              @default(0)
   shinyCardsFound    Int              @default(0)
+  lastDailyReward    DateTime?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   isPublic           Boolean           @default(true)
@@ -152,4 +153,14 @@ model TradeCard {
   card          Card        @relation(fields: [cardId], references: [id])
 
   @@map("trade_cards")
+}
+
+model GameSettings {
+  id                Int      @id @default(autoincrement())
+  key              String   @unique
+  value            String
+  description      String?
+  updatedAt        DateTime @updatedAt
+
+  @@map("game_settings")
 }
