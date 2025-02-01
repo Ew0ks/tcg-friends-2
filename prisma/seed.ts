@@ -123,6 +123,11 @@ async function main() {
         type: "EPIC",
         cost: 500,
         cardCount: 1
+      },
+      {
+        type: "MAXI",
+        cost: 400,
+        cardCount: 8
       }
     ]
   });
@@ -138,6 +143,11 @@ async function main() {
         quote: template.quote,
         power: template.power,
         rarity: template.rarity,
+        set: {
+          connect: {
+            code: 'XPRCHT'
+          }
+        }
       },
     });
   }

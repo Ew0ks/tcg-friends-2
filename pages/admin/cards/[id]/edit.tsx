@@ -1,49 +1,71 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Card } from '@prisma/client';
+import { Card, Rarity } from '@prisma/client';
 import { toast } from 'sonner';
 import Image from 'next/image';
+
+interface FormData {
+  name: string;
+  description: string;
+  quote?: string | null;
+  power: string;
+  rarity: Rarity;
+  imageUrl: string;
+  setId: number;
+  image: File | null;
+}
 
 export default function EditCard() {
   const router = useRouter();
   const { id } = router.query;
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState<Partial<Card> & { image: File | null }>({
+  const [sets, setSets] = useState<Array<{ id: number; code: string; name: string }>>([]);
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
-    quote: '',
+    quote: null,
     power: '',
-    rarity: '',
+    rarity: 'COMMON',
     imageUrl: '',
+    setId: 0,
     image: null,
   });
 
   useEffect(() => {
-    const fetchCard = async () => {
+    const fetchData = async () => {
       if (!id) return;
 
       try {
-        const response = await fetch(`/api/admin/cards/${id}`);
-        if (!response.ok) {
+        // Charger la liste des sets
+        const setsResponse = await fetch('/api/admin/sets');
+        if (!setsResponse.ok) {
+          throw new Error('Erreur lors de la récupération des sets');
+        }
+        const setsData = await setsResponse.json();
+        setSets(setsData);
+
+        // Charger les données de la carte
+        const cardResponse = await fetch(`/api/admin/cards/${id}`);
+        if (!cardResponse.ok) {
           throw new Error('Erreur lors de la récupération de la carte');
         }
-        const card = await response.json();
+        const cardData = await cardResponse.json();
         setFormData({
-          ...card,
-          power: card.power.toString(),
+          ...cardData,
+          power: cardData.power.toString(),
           image: null,
         });
       } catch (error) {
         console.error('Erreur:', error);
-        toast.error('Erreur lors du chargement de la carte');
+        toast.error('Erreur lors du chargement des données');
         router.push('/admin/cards');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCard();
+    fetchData();
   }, [id, router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,7 +207,7 @@ export default function EditCard() {
                 id="rarity"
                 className="w-full px-3 py-2 bg-game-dark/50 rounded-lg border border-game-accent/20 focus:border-game-accent focus:outline-none"
                 value={formData.rarity}
-                onChange={(e) => setFormData({ ...formData, rarity: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, rarity: e.target.value as Rarity })}
                 required
               >
                 <option value="">Sélectionnez une rareté</option>
@@ -194,6 +216,26 @@ export default function EditCard() {
                 <option value="RARE">Rare</option>
                 <option value="EPIC">Épique</option>
                 <option value="LEGENDARY">Légendaire</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="set" className="block text-sm font-medium">
+                Set
+              </label>
+              <select
+                id="set"
+                className="w-full px-3 py-2 bg-game-dark/50 rounded-lg border border-game-accent/20 focus:border-game-accent focus:outline-none"
+                value={formData.setId}
+                onChange={(e) => setFormData({ ...formData, setId: Number(e.target.value) })}
+                required
+              >
+                <option value="">Sélectionnez un set</option>
+                {sets.map((set) => (
+                  <option key={set.id} value={set.id}>
+                    {set.name} ({set.code})
+                  </option>
+                ))}
               </select>
             </div>
 

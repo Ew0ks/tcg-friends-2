@@ -1,10 +1,20 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Rarity } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
 import { uploadImage } from '@/lib/cloudinary';
 
 const prisma = new PrismaClient();
+
+interface UpdateCardData {
+  name: string;
+  description: string;
+  quote?: string | null;
+  power: number;
+  rarity: Rarity;
+  setId: number;
+  imageUrl?: string;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'PUT') {
@@ -29,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { id } = req.query;
     const cardId = parseInt(id as string);
-    const { name, description, quote, power, rarity, imageBase64 } = req.body;
+    const { name, description, quote, power, rarity, imageBase64, setId } = req.body;
 
     // Vérifier si la carte existe
     const card = await prisma.card.findUnique({
@@ -41,12 +51,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Préparer les données de mise à jour
-    const updateData: any = {
+    const updateData: UpdateCardData = {
       name,
       description,
       quote,
       power: parseInt(power),
       rarity,
+      setId: parseInt(setId),
     };
 
     // Si une nouvelle image est fournie, la télécharger

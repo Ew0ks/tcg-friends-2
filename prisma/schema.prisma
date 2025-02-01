@@ -53,6 +53,17 @@ model User {
   receivedTrades     TradeOffer[]     @relation("ReceivedTrades")
 }
 
+model Set {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique // Code unique du set (ex: "XPRCHT")
+  name        String   // Nom complet du set
+  description String?  // Description optionnelle du set
+  releaseDate DateTime @default(now())
+  cards       Card[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Card {
   id             Int               @id @default(autoincrement())
   name           String
@@ -61,6 +72,8 @@ model Card {
   quote          String?
   power          Int
   imageUrl       String            @default("/images/cards/placeholder.webp")
+  setId          Int              // Relation avec le set
+  set            Set              @relation(fields: [setId], references: [id])
   collectedCards CollectedCard[]
   boosterCards   CardFromBooster[]
   tradeCards     TradeCard[]

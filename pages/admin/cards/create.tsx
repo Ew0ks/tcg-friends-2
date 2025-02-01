@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { toast } from 'sonner';
 
@@ -11,8 +11,29 @@ export default function CreateCard() {
     quote: '',
     power: '',
     rarity: '',
+    setId: '',
     image: null as File | null,
   });
+  const [sets, setSets] = useState<Array<{ id: number; code: string; name: string }>>([]);
+
+  useEffect(() => {
+    // Charger la liste des sets
+    const fetchSets = async () => {
+      try {
+        const response = await fetch('/api/admin/sets');
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des sets');
+        }
+        const data = await response.json();
+        setSets(data);
+      } catch (error) {
+        console.error('Erreur:', error);
+        toast.error('Erreur lors du chargement des sets');
+      }
+    };
+
+    fetchSets();
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -90,7 +111,15 @@ export default function CreateCard() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Créer une nouvelle carte</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Créer une nouvelle carte</h1>
+        <button
+          onClick={() => router.push('/admin/cards')}
+          className="px-4 py-2 bg-game-dark text-white rounded-lg hover:bg-game-dark/80 transition-colors"
+        >
+          Retour
+        </button>
+      </div>
 
       <form onSubmit={handleSubmit} className="game-panel p-6 max-w-xl mx-auto">
         <div className="space-y-6">
@@ -167,6 +196,26 @@ export default function CreateCard() {
               <option value="RARE">Rare</option>
               <option value="EPIC">Épique</option>
               <option value="LEGENDARY">Légendaire</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="set" className="block text-sm font-medium">
+              Set
+            </label>
+            <select
+              id="set"
+              className="w-full px-3 py-2 bg-game-dark/50 rounded-lg border border-game-accent/20 focus:border-game-accent focus:outline-none"
+              value={formData.setId}
+              onChange={(e) => setFormData({ ...formData, setId: e.target.value })}
+              required
+            >
+              <option value="">Sélectionnez un set</option>
+              {sets.map((set) => (
+                <option key={set.id} value={set.id}>
+                  {set.name} ({set.code})
+                </option>
+              ))}
             </select>
           </div>
 
