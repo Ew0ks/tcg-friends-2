@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { CardProps } from '../components/Card';
 import { toast } from 'sonner';
+import PageTitleTooltip from '../components/PageTitleTooltip';
 
 type TradeStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
 
@@ -230,15 +231,23 @@ const TradesPage = () => {
   if (isLoading) {
     return (
       <div className="container mx-auto p-8">
-        <h1 className="text-3xl font-bold text-game-accent mb-8">Échanges</h1>
+        <PageTitleTooltip 
+          title="Échanges"
+          tooltip="Proposez et acceptez des échanges de cartes avec d'autres joueurs. Pour démarrer un échange, sélectionnez 'Proposer un échange' sur la collection de l'un de vos adversaires. Vous retrouverez vos échanges en cours et passés ici !"
+          className="mb-8"
+        />
         <div>Chargement...</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold text-game-accent mb-4">Échanges</h1>
+    <div className="container mx-auto p-8">
+      <PageTitleTooltip 
+        title="Échanges"
+        tooltip="Proposez et acceptez des échanges de cartes avec d'autres joueurs. Pour démarrer un échange, sélectionnez 'Proposer un échange' sur la collection de l'un de vos adversaires. Vous retrouverez vos échanges en cours et passés ici !"
+        className="mb-8"
+      />
 
       <div className="flex gap-2 mb-4">
         <button

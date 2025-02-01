@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient, Rarity, BoosterType, Card } from '@prisma/client';
+import { PrismaClient, Rarity, BoosterType, Card, GameSettingKey, GameSettings } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 
@@ -11,7 +11,7 @@ interface GeneratedCard {
 }
 
 // Poids pour la génération aléatoire des raretés
-const RARITY_WEIGHTS = {
+const BASE_RARITY_WEIGHTS = {
   [Rarity.COMMON]: 70,
   [Rarity.UNCOMMON]: 20,
   [Rarity.RARE]: 8,
@@ -22,8 +22,48 @@ const RARITY_WEIGHTS = {
 // Chance d'obtenir une carte en version shiny
 const SHINY_CHANCE = 0.05;
 
+// Fonction pour vérifier si le boost est actif
+async function isBoostActive(): Promise<boolean> {
+  const settings = await prisma.gameSettings.findMany({
+    where: {
+      key: {
+        in: [
+          GameSettingKey.BOOST_DROP_RATE_ENABLED,
+          GameSettingKey.BOOST_DROP_RATE_START,
+          GameSettingKey.BOOST_DROP_RATE_END,
+        ],
+      },
+    },
+  });
+
+  const enabled = settings.find((s: GameSettings) => s.key === GameSettingKey.BOOST_DROP_RATE_ENABLED)?.value === 'true';
+  if (!enabled) return false;
+
+  const startDate = new Date(settings.find((s: GameSettings) => s.key === GameSettingKey.BOOST_DROP_RATE_START)?.value || '');
+  const endDate = new Date(settings.find((s: GameSettings) => s.key === GameSettingKey.BOOST_DROP_RATE_END)?.value || '');
+  const now = new Date();
+
+  return now >= startDate && now <= endDate;
+}
+
+// Fonction pour obtenir les poids de rareté actuels
+async function getCurrentRarityWeights(): Promise<typeof BASE_RARITY_WEIGHTS> {
+  const isBoost = await isBoostActive();
+  
+  if (!isBoost) return BASE_RARITY_WEIGHTS;
+
+  // Doubler les chances pour toutes les cartes non communes
+  return {
+    [Rarity.COMMON]: BASE_RARITY_WEIGHTS[Rarity.COMMON],
+    [Rarity.UNCOMMON]: BASE_RARITY_WEIGHTS[Rarity.UNCOMMON] * 2,
+    [Rarity.RARE]: BASE_RARITY_WEIGHTS[Rarity.RARE] * 2,
+    [Rarity.EPIC]: BASE_RARITY_WEIGHTS[Rarity.EPIC] * 2,
+    [Rarity.LEGENDARY]: BASE_RARITY_WEIGHTS[Rarity.LEGENDARY] * 2,
+  };
+}
+
 // Fonction pour déterminer une rareté aléatoire
-function getRandomRarity(boosterType?: BoosterType): Rarity {
+async function getRandomRarity(boosterType?: BoosterType): Promise<Rarity> {
   // Logique spéciale pour le booster épique
   if (boosterType === BoosterType.EPIC) {
     const roll = Math.random();
@@ -32,8 +72,8 @@ function getRandomRarity(boosterType?: BoosterType): Rarity {
     // Pour les 50% restants, on utilise la distribution normale
   }
 
-  // Logique pour les boosters standards, rares et maxi
-  const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
+  const weights = await getCurrentRarityWeights();
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
   let random = Math.random() * total;
 
   // Pour les boosters standards, rares et maxi, on vérifie la rareté minimale
@@ -41,7 +81,7 @@ function getRandomRarity(boosterType?: BoosterType): Rarity {
                    boosterType === BoosterType.STANDARD ? Rarity.UNCOMMON :
                    undefined;
 
-  for (const [rarity, weight] of Object.entries(RARITY_WEIGHTS)) {
+  for (const [rarity, weight] of Object.entries(weights)) {
     if (minRarity && rarity < minRarity) continue;
     random -= weight;
     if (random <= 0) return rarity as Rarity;
@@ -108,7 +148,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Générer les cartes
     for (let i = 0; i < boosterConfig.cardCount; i++) {
-      const rarity = getRandomRarity(type);
+      const rarity = await getRandomRarity(type);
       const card = await getRandomCard(rarity);
       const isShiny = Math.random() < SHINY_CHANCE;
       cards.push({ card, isShiny });

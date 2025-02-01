@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '@prisma/client';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import PageTitleTooltip from '../../../components/PageTitleTooltip';
 
 export default function AdminCards() {
   const router = useRouter();
@@ -71,7 +72,11 @@ export default function AdminCards() {
   if (isLoading) {
     return (
       <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6">Administration des cartes</h1>
+        <PageTitleTooltip 
+          title="Administration des cartes"
+          tooltip="Gérez toutes les cartes du jeu. Créez, modifiez ou supprimez des cartes et leurs caractéristiques."
+          className="mb-6"
+        />
         <div>Chargement...</div>
       </div>
     );
@@ -80,7 +85,10 @@ export default function AdminCards() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Administration des cartes</h1>
+        <PageTitleTooltip 
+          title="Administration des cartes"
+          tooltip="Gérez toutes les cartes du jeu. Créez, modifiez ou supprimez des cartes et leurs caractéristiques."
+        />
         <button
           onClick={() => router.push('/admin/cards/create')}
           className="flex items-center gap-2 px-4 py-2 bg-game-accent text-white rounded-lg hover:bg-game-accent/80 transition-colors"

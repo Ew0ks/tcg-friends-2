@@ -3,6 +3,8 @@ import { useSession } from 'next-auth/react';
 import Card from '../components/Card';
 import { Rarity } from '@prisma/client';
 import RarityFilters from '../components/RarityFilters';
+import { toast } from 'sonner';
+import PageTitleTooltip from '../components/PageTitleTooltip';
 
 // Définir le type pour une carte collectée
 interface CollectedCard {
@@ -136,9 +138,10 @@ const Collection: React.FC = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <p className="text-game-muted mb-1">Ma collection</p>
-          <h1 className="text-3xl font-bold text-game-accent">
-            Collection personnelle
-          </h1>
+          <PageTitleTooltip 
+            title="Collection personnelle"
+            tooltip="Gérez votre collection de cartes, consultez vos statistiques et définissez la visibilité de votre collection pour les autres joueurs."
+          />
         </div>
         
         <div className="flex items-center gap-3">

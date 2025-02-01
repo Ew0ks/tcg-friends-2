@@ -6,6 +6,7 @@ import { calculatePrice, getPriceConfig } from '../utils/merchantPrices';
 import Card, { CardProps } from '../components/Card';
 import SaleConfirmationModal from '../components/SaleConfirmationModal';
 import RarityFilters from '../components/RarityFilters';
+import PageTitleTooltip from '../components/PageTitleTooltip';
 import { toast } from 'sonner';
 
 interface CollectedCard extends CardProps {
@@ -214,7 +215,10 @@ const MerchantPage = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-game-accent">Marchand</h1>
+        <PageTitleTooltip 
+          title="Marchand"
+          tooltip="Vendez vos cartes en double contre des crédits. Les cartes Shiny rapportent 50% de plus ! Profitez des prix avantageux pour les lots de 10 cartes identiques."
+        />
         <RarityFilters
           selectedRarity={selectedRarity}
           onChange={setSelectedRarity}

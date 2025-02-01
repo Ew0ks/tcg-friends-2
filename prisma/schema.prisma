@@ -35,6 +35,10 @@ enum TradeStatus {
   CANCELLED
 }
 
+enum GameSettingKey {
+  DAILY_REWARD_AMOUNT
+}
+
 model User {
   id                 Int               @id @default(autoincrement())
   username           String            @unique
@@ -156,11 +160,23 @@ model TradeCard {
 }
 
 model GameSettings {
-  id                Int      @id @default(autoincrement())
-  key              String   @unique
+  id                Int            @id @default(autoincrement())
+  key              GameSettingKey  @unique
   value            String
   description      String?
-  updatedAt        DateTime @updatedAt
+  updatedAt        DateTime        @updatedAt
 
   @@map("game_settings")
+}
+
+model BoostSession {
+  id        Int      @id @default(autoincrement())
+  startDate DateTime
+  endDate   DateTime
+  active    Boolean  @default(true)
+  message   String   @default("Boost actif ! Drop rates doublés pour les cartes non communes !")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("boost_sessions")
 }

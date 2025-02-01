@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card as CardType, Rarity } from '@prisma/client';
 import Card from '../components/Card';
 import RarityFilters from '../components/RarityFilters';
+import PageTitleTooltip from '../components/PageTitleTooltip';
 
 interface LibraryCard extends CardType {
   isOwned: boolean;
@@ -75,9 +76,10 @@ const Library = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <p className="text-game-muted mb-1">Toutes les cartes</p>
-          <h1 className="text-3xl font-bold text-game-accent">
-            Catalogue
-          </h1>
+          <PageTitleTooltip 
+            title="Catalogue"
+            tooltip="Découvrez toutes les cartes disponibles dans le jeu, leurs raretés et leurs caractéristiques. Un aperçu complet de ce que vous pouvez collectionner !"
+          />
         </div>
         <RarityFilters
           selectedRarity={selectedRarity}

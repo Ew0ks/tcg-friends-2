@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import PageTitleTooltip from '../components/PageTitleTooltip';
 
 export default function Home() {
   const { data: session } = useSession();
@@ -32,7 +33,11 @@ export default function Home() {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-game-accent mb-4">Bienvenue sur TCG Xprcht</h1>
+        <PageTitleTooltip 
+          title="Bienvenue sur TCG Xprcht"
+          tooltip="Plongez dans l'univers passionnant de TCG Xprcht ! Collectionnez des cartes uniques, échangez avec d'autres joueurs et construisez votre collection de rêve."
+          className="justify-center mb-4"
+        />
         <p className="text-xl text-game-text mb-8">Découvrez l&apos;univers passionnant des cartes à collectionner !</p>
       </div>
 

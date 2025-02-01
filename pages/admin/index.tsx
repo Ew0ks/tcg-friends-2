@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { GearIcon, PersonIcon, CardStackIcon } from '@radix-ui/react-icons';
+import PageTitleTooltip from '../../components/PageTitleTooltip';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -38,7 +39,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-8">Administration TCG Xprcht</h1>
+      <PageTitleTooltip 
+        title="Administration TCG Xprcht"
+        tooltip="Panneau d'administration principal. Accédez à tous les outils de gestion : cartes, utilisateurs et paramètres du jeu."
+        className="mb-8"
+      />
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {adminModules.map((module) => (

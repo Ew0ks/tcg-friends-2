@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { BoosterType, Rarity } from '@prisma/client';
+import { BoosterType, Rarity, UserRole } from '@prisma/client';
 import CardRevealModal from '../components/CardRevealModal';
 import { useGlobalSession } from '../hooks/useGlobalSession';
 import { toast } from 'sonner';
+import PageTitleTooltip from '../components/PageTitleTooltip';
 
 interface Booster {
   type: BoosterType;
@@ -21,18 +22,54 @@ interface OpenedCard {
   isShiny: boolean;
 }
 
+interface DropRates {
+  dropRates: Record<Rarity, number>;
+  boostActive: boolean;
+  shinyChance: number;
+}
+
 const OpenBoosters: React.FC = () => {
   const { session, updateCredits } = useGlobalSession();
   const [boosters, setBoosters] = useState<Booster[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openedCards, setOpenedCards] = useState<OpenedCard[]>([]);
   const [currentCredits, setCurrentCredits] = useState<number>(session?.user?.credits || 0);
+  const [dropRates, setDropRates] = useState<DropRates | null>(null);
 
   useEffect(() => {
     if (session?.user?.credits) {
       setCurrentCredits(session.user.credits);
     }
   }, [session?.user?.credits]);
+
+  useEffect(() => {
+    const fetchDropRates = async () => {
+      if (session?.user?.role === UserRole.ADMIN) {
+        try {
+          console.log('Récupération des drop rates...');
+          const res = await fetch('/api/boosters/drop-rates');
+          if (res.ok) {
+            const data = await res.json();
+            console.log('Nouveaux drop rates reçus:', data);
+            setDropRates(data);
+          }
+        } catch (error) {
+          console.error('Erreur lors de la récupération des drop rates:', error);
+        }
+      }
+    };
+
+    // Appel initial
+    fetchDropRates();
+
+    // Rafraîchir toutes les 30 secondes pour tenir compte des changements de période de boost
+    const interval = setInterval(() => {
+      console.log('Rafraîchissement des drop rates...');
+      fetchDropRates();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [session?.user?.role]);
 
   const fetchBoosters = async () => {
     const res = await fetch('/api/boosters', {
@@ -75,8 +112,8 @@ const OpenBoosters: React.FC = () => {
       const data = await res.json();
       
       // Notification en fonction de la rareté des cartes obtenues
-      const hasLegendary = data.cards.some((card: any) => card.rarity === 'LEGENDARY');
-      const hasShiny = data.cards.some((card: any) => card.isShiny);
+      const hasLegendary = data.cards.some((cardData: { card: OpenedCard; isShiny: boolean }) => cardData.card.rarity === 'LEGENDARY');
+      const hasShiny = data.cards.some((cardData: { card: OpenedCard; isShiny: boolean }) => cardData.isShiny);
       
       if (hasLegendary && hasShiny) {
         toast.success('🌟 Incroyable ! Une carte légendaire shiny !', { duration: 5000 });
@@ -116,7 +153,40 @@ const OpenBoosters: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-game-accent mb-8">Ouvrir des Boosters</h1>
+      <div className="flex items-center justify-between mb-8">
+        <PageTitleTooltip 
+          title="Ouvrir des Boosters" 
+          tooltip="Dépensez vos crédits pour obtenir de nouvelles cartes. Chaque booster contient un nombre défini de cartes avec des chances différentes d'obtenir des raretés spécifiques. Les cartes peuvent également être obtenues en version Shiny !"
+        />
+        
+        {session?.user?.role === UserRole.ADMIN && dropRates && (
+          <div className="flex items-center gap-4 bg-game-panel px-4 py-2 rounded-lg">
+            {Object.entries(dropRates.dropRates).map(([rarity, rate]) => {
+              const isCommon = rarity === 'COMMON';
+              const isRateBoosted = dropRates.boostActive && !isCommon;
+              return (
+                <div key={rarity} className="flex items-center gap-1">
+                  <span className="text-xs font-medium opacity-70">{rarity}</span>
+                  <span className={`text-sm font-bold ${isRateBoosted ? 'text-game-accent' : ''}`}>
+                    {rate}%
+                    {isRateBoosted && <span className="text-[10px] ml-0.5" title="Taux boosté">↑</span>}
+                  </span>
+                </div>
+              );
+            })}
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-medium opacity-70">SHINY</span>
+              <span className="text-sm font-bold">{dropRates.shinyChance}%</span>
+            </div>
+            {dropRates.boostActive && (
+              <div className="flex items-center gap-1 text-game-accent">
+                <span className="animate-pulse text-lg">●</span>
+                <span className="text-xs font-medium">Boost actif</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {boosters.map((booster) => {

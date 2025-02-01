@@ -53,6 +53,7 @@ const Signup: React.FC = () => {
               className="game-input w-full"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
               required
             />
           </div>
@@ -65,6 +66,7 @@ const Signup: React.FC = () => {
               className="game-input w-full"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
           </div>
