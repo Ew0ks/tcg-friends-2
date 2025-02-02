@@ -86,14 +86,14 @@ const Card: React.FC<CardProps> = ({
       )}
 
       <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center">
-        {quantity && (
-          <span className="text-game-success">
-            x{quantity}
-          </span>
-        )}
         <span className={`text-xs ${getRarityTextColor(rarity)}`}>
           {isShiny && <span className="text-yellow-400 shiny-title">✨ Shiny - </span>}{rarity}
         </span>
+        {quantity && quantity > 1 && (
+          <div className="absolute bottom-[-10px] right-[-10px] bg-game-accent text-white text-sm px-2 py-1 rounded-lg shadow-lg">
+            x{quantity}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -110,7 +110,7 @@ const getRarityStyle = (rarity: string | Rarity) => {
     case 'UNCOMMON':
       return 'bg-gradient-to-br from-green-900 to-game-dark';
     default:
-      return 'bg-game-dark';
+      return 'bg-gradient-to-br from-gray-700 to-gray-900';
   }
 };
 

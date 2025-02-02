@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { TradeStatus } from '@prisma/client';
 import PageTitleTooltip from '../components/PageTitleTooltip';
 import { Trade, ApiTradeResponse } from '../schemas';
+import Link from 'next/link';
 
 const TradesPage = () => {
   const { data: session } = useSession();
@@ -287,7 +288,7 @@ const TradesPage = () => {
                           {tradeCard.card.rarity.charAt(0)}
                         </span>
                         {tradeCard.quantity > 1 && (
-                          <span className="bg-game-accent/20 text-game-accent px-1.5 py-0.5 rounded">
+                          <span className="bg-game-accent/20 text-game-accent px-2 py-1 rounded-lg shadow-sm">
                             x{tradeCard.quantity}
                           </span>
                         )}
@@ -321,7 +322,7 @@ const TradesPage = () => {
                           {tradeCard.card.rarity.charAt(0)}
                         </span>
                         {tradeCard.quantity > 1 && (
-                          <span className="bg-game-accent/20 text-game-accent px-1.5 py-0.5 rounded">
+                          <span className="bg-game-accent/20 text-game-accent px-2 py-1 rounded-lg shadow-sm">
                             x{tradeCard.quantity}
                           </span>
                         )}
@@ -337,7 +338,16 @@ const TradesPage = () => {
           </div>
         ))}
 
-        {trades.length === 0 && (
+        {trades.length === 0 ? (
+          <div className="text-center text-game-muted py-8">
+            <p>
+              Aucun échange pour le moment.<br />Commencez à échanger dès maintenant en vous rendant sur la page des{' '}
+              <Link href="/collections" className="text-game-accent hover:text-game-accent/80 underline">
+                collections des autres joueurs
+              </Link> !
+            </p>
+          </div>
+        ) : (
           <div className="text-center py-12 game-panel">
             <p className="text-game-muted">
               Aucun échange {activeTab === 'sent' ? 'envoyé' : activeTab === 'received' ? 'reçu' : ''} pour le moment.

@@ -6,6 +6,7 @@ import { Rarity } from '@prisma/client';
 import Link from 'next/link';
 import TradeModal from '../../components/TradeModal';
 import RarityFilters from '../../components/RarityFilters';
+import { toast } from 'sonner';
 
 interface CollectedCard {
   id: number;
@@ -108,16 +109,16 @@ const UserCollectionPage = () => {
       });
 
       if (response.ok) {
-        // TODO: Afficher une notification de succès
+        toast.success('Échange proposé avec succès !');
         setIsTradeModalOpen(false);
       } else {
         const error = await response.json();
         console.error('Erreur lors de la création de l\'échange:', error);
-        // TODO: Afficher une notification d'erreur
+        toast.error(error.message || 'Erreur lors de la création de l\'échange');
       }
     } catch (error) {
       console.error('Erreur lors de la création de l\'échange:', error);
-      // TODO: Afficher une notification d'erreur
+      toast.error('Une erreur est survenue lors de la création de l\'échange');
     }
   };
 

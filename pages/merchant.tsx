@@ -274,12 +274,6 @@ const MerchantPage = () => {
                   onClick={() => remainingQuantity > 0 && handleCardSelect(card)}
                 >
                   <Card {...card} quantity={remainingQuantity} />
-                  {remainingQuantity > 1 && (
-                    <div className="absolute top-2 right-2 bg-game-accent text-white px-2 py-1 rounded">
-                      x{remainingQuantity}
-                    </div>
-                  )}
-
                   {/* Prix de vente */}
                   <div className="
                     absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30

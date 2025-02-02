@@ -159,7 +159,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
                   key={key} 
                   className="relative group shrink-0 snap-start scale-50 hover:scale-55 -mx-12 -my-20 transition-all duration-200"
                 >
-                  <Card {...card} isShiny={isShiny} />
+                  <Card {...card} isShiny={isShiny} quantity={selectedQuantity} />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 flex gap-2">
                       {selectedQuantity > 0 && (
@@ -180,11 +180,6 @@ const TradeModal: React.FC<TradeModalProps> = ({
                       )}
                     </div>
                   </div>
-                  {selectedQuantity > 0 && (
-                    <div className="absolute top-2 right-2 bg-game-accent text-white px-2 py-1 rounded">
-                      x{selectedQuantity}
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -211,7 +206,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
                   key={key} 
                   className="relative group shrink-0 snap-start scale-50 hover:scale-55 -mx-12 -my-20 transition-all duration-200"
                 >
-                  <Card {...card} isShiny={isShiny} />
+                  <Card {...card} isShiny={isShiny} quantity={selectedQuantity} />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 flex gap-2">
                       {selectedQuantity > 0 && (
@@ -232,11 +227,6 @@ const TradeModal: React.FC<TradeModalProps> = ({
                       )}
                     </div>
                   </div>
-                  {selectedQuantity > 0 && (
-                    <div className="absolute top-2 right-2 bg-game-accent text-white px-2 py-1 rounded">
-                      x{selectedQuantity}
-                    </div>
-                  )}
                 </div>
               );
             })}

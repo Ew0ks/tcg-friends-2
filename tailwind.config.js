@@ -10,12 +10,12 @@ module.exports = {
         '55': '0.55',
       },
       colors: {
-        'game-dark': '#1e1b2c',
-        'game-light': '#2a2639',
-        'game-accent': '#9f7aea',
-        'game-text': '#f7fafc',
-        'game-muted': '#a0aec0',
-        'game-success': '#48bb78',
+        'game-dark': '#2E222F',
+        'game-light': '#3E323F',
+        'game-accent': '#A855F7',
+        'game-text': '#E2E8F0',
+        'game-muted': '#94A3B8',
+        'game-success': '#10B981',
       },
       animation: {
         'shine': 'shine 2s linear infinite',

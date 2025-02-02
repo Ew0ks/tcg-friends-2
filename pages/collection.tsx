@@ -277,12 +277,8 @@ const Collection: React.FC = () => {
               isShiny={collectedCard.isShiny}
               isNew={collectedCard.isNew}
               onHover={() => handleCardHover(collectedCard.card.id, collectedCard.isShiny)}
+              quantity={collectedCard.quantity}
             />
-            {collectedCard.quantity > 1 && (
-              <div className="absolute bottom-[-10px] right-[10px] bg-game-accent text-white px-2 py-1 rounded">
-                x{collectedCard.quantity}
-              </div>
-            )}
           </div>
         ))}
       </div>

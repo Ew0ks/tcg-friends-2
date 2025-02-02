@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { FaCoins, FaUserCircle } from 'react-icons/fa';
 import { Bars3Icon } from '@heroicons/react/24/outline';
 import { User } from 'next-auth';
 import MobileMenu from './MobileMenu';
 import Navigation from './Navigation';
-import { GearIcon } from '@radix-ui/react-icons';
 
 interface HeaderProps {
   credits: number;
@@ -67,12 +67,12 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
   }, [isMobileMenuOpen]);
 
   return (
-    <header className="bg-game-light shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 py-3">
+    <header className="bg-[#1C111D] shadow-lg">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between md:justify-start gap-6">
           {/* Menu burger pour mobile */}
           <button
-            className="md:hidden p-2 text-game-text hover:text-game-accent hover:bg-game-dark rounded-lg transition-colors"
+            className="md:hidden p-2 text-white hover:text-blue-300 hover:bg-[#2D1C2E] rounded-lg transition-colors"
             onClick={() => setIsMobileMenuOpen(true)}
           >
             <Bars3Icon className="h-6 w-6" />
@@ -80,7 +80,14 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
 
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <h1 className="text-xl font-bold text-game-accent">TCG Xprcht</h1>
+            <Image 
+              src="https://res.cloudinary.com/dwyryncig/image/upload/v1738520812/logo_tcg-removebg-preview_byd8ij.png" 
+              alt="TCG Xprcht Logo" 
+              width={120}
+              height={40}
+              className="h-14 w-auto rounded"
+              priority
+            />
           </Link>
 
           {/* Navigation desktop */}
@@ -90,15 +97,15 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
 
           {/* User info */}
           <div className="flex items-center space-x-4">
-            <span className="flex items-center bg-game-dark/50 px-3 py-1.5 rounded-lg">
-              <span className="font-semibold text-game-success">{credits}</span>
+            <span className="flex items-center bg-[#2D1C2E] px-3 py-1.5 rounded-lg">
+              <span className="font-semibold text-blue-300">{credits}</span>
               <FaCoins className="ml-2 text-yellow-400 w-4 h-4" />
             </span>
             <div className="relative">
               <button
                 ref={buttonRef}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 text-game-text hover:text-game-accent hover:bg-game-dark rounded-lg transition-colors flex items-center space-x-2"
+                className="p-2 text-white hover:text-blue-300 hover:bg-[#243a63] rounded-lg transition-colors flex items-center space-x-2"
               >
                 <span className="text-sm hidden md:inline">{user?.username}</span>
                 <FaUserCircle className="w-5 h-5" />
@@ -107,12 +114,12 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
               {isMenuOpen && (
                 <div 
                   ref={menuRef}
-                  className="absolute right-0 top-full mt-2 w-48 bg-game-dark rounded-lg shadow-xl border border-game-accent/10 overflow-hidden z-50"
+                  className="absolute right-0 top-full mt-2 w-48 bg-[#243a63] rounded-lg shadow-xl border border-game-accent/10 overflow-hidden z-50"
                 >
                   <div className="py-1">
                     <Link
                       href="/settings"
-                      className="flex items-center px-4 py-2 text-game-text hover:bg-game-light hover:text-game-accent transition-colors"
+                      className="flex items-center px-4 py-2 text-white hover:bg-game-light hover:text-game-accent transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Paramètres
@@ -123,7 +130,7 @@ const Header: React.FC<HeaderProps> = ({ credits, onLogout, user }) => {
                         setIsMenuOpen(false);
                         onLogout();
                       }}
-                      className="w-full flex items-center px-4 py-2 text-game-text hover:bg-game-light hover:text-game-accent transition-colors"
+                      className="w-full flex items-center px-4 py-2 text-white hover:bg-game-light hover:text-game-accent transition-colors"
                     >
                       Se déconnecter
                     </button>

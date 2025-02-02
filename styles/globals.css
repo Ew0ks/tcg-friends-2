@@ -37,7 +37,8 @@ p {
       width: 100%;
       top: 0;
       left: 0;
-      background-image: url('/images/cards/back-card.webp');
+      box-shadow: inset 0px 0px 0px 7px #020014;
+      background-image: url('https://res.cloudinary.com/dwyryncig/image/upload/v1738519560/OIG2_1_vy3yj6.jpg');
       background-size: cover;
       background-position: center;
       transform-style: preserve-3d;
