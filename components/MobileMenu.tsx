@@ -93,6 +93,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogout, user
           )}
         </Link>
       </div>
+      <Link
+        href="/achievements"
+        className="text-game-text hover:text-game-accent transition-colors"
+        onClick={onClose}
+      >
+        Achievements
+      </Link>
       {user && user.role === 'ADMIN' && (
         <>
           <div className="h-px bg-game-light/20 mx-4" />

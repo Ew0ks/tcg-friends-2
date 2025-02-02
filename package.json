@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "ts-node prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "seed:achievements": "ts-node -O '{\"module\":\"CommonJS\"}' prisma/seed-achievements.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

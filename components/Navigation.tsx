@@ -92,6 +92,9 @@ const Navigation: React.FC<NavigationProps> = ({ user, pendingTrades }) => {
           </div>
         )}
       </div>
+      <Link href="/achievements" className="p-2 text-game-text hover:text-game-accent transition-colors rounded-lg hover:bg-game-dark">
+        Achievements
+      </Link>
       {user && user.role === 'ADMIN' && (
         <>
           <div className="h-4 w-px bg-game-dark/50" />

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 import prisma from '../../../lib/prisma';
 import { Card, Rarity, BoosterType } from '@prisma/client';
+import { achievementService } from '@/lib/services/achievementService';
 
 interface GeneratedCard extends Card {
   isShiny: boolean;
@@ -118,6 +119,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
     }
+
+    await achievementService.handleAchievementEvent({
+      userId: Number(session.user.id),
+      type: 'BOOSTER_OPENED',
+    });
 
     return res.status(200).json({
       cards,

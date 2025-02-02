@@ -12,6 +12,13 @@ export default function Layout({ children }: LayoutProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  const navigation = [
+    { name: 'Collection', href: '/collection' },
+    { name: 'Merchant', href: '/merchant' },
+    { name: 'Trades', href: '/trades' },
+    { name: 'Achievements', href: '/achievements' },
+  ];
+
   useEffect(() => {
     const publicPages = ['/', '/login', '/signup'];
     const isPublicPage = publicPages.includes(router.pathname);

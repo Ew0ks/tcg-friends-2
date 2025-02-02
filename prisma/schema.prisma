@@ -39,6 +39,13 @@ enum GameSettingKey {
   DAILY_REWARD_AMOUNT
 }
 
+enum AchievementCategory {
+  COLLECTION
+  TRADING
+  BOOSTERS
+  SHINY
+}
+
 model User {
   id                 Int               @id @default(autoincrement())
   username           String            @unique
@@ -56,6 +63,7 @@ model User {
   isPublic           Boolean           @default(true)
   initiatedTrades    TradeOffer[]      @relation("InitiatedTrades")
   receivedTrades     TradeOffer[]     @relation("ReceivedTrades")
+  achievements       UserAchievement[]
 }
 
 model Set {
@@ -179,4 +187,29 @@ model BoostSession {
   updatedAt DateTime @updatedAt
 
   @@map("boost_sessions")
+}
+
+model Achievement {
+  id          Int                 @id @default(autoincrement())
+  code        String              @unique
+  name        String
+  description String
+  category    AchievementCategory
+  threshold   Int
+  imageUrl    String              @default("/images/achievements/default.webp")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  achievementId Int
+  unlockedAt    DateTime    @default(now())
+  progress      Int         @default(0)
+  user          User        @relation(fields: [userId], references: [id])
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
 }
