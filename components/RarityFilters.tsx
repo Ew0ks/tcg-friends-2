@@ -1,10 +1,5 @@
 import { Rarity } from '@prisma/client';
-
-interface RarityFiltersProps {
-  selectedRarity: Rarity | null;
-  onChange: (rarity: Rarity | null) => void;
-  className?: string;
-}
+import { RarityFiltersProps } from '../schemas/components';
 
 const RarityFilters: React.FC<RarityFiltersProps> = ({
   selectedRarity,

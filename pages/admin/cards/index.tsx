@@ -1,35 +1,90 @@
 import { useRouter } from 'next/router';
-import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
+import { PlusIcon, Pencil1Icon, TrashIcon, ArrowLeftIcon, ArrowUpIcon, ArrowDownIcon } from '@radix-ui/react-icons';
 import { useEffect, useState } from 'react';
 import { Card } from '@prisma/client';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import PageTitleTooltip from '../../../components/PageTitleTooltip';
 
+type SortField = 'name' | 'rarity' | 'power' | null;
+type SortOrder = 'asc' | 'desc' | null;
+
+interface SortableColumnProps {
+  title: string;
+  field: SortField;
+  currentSort: SortField;
+  currentOrder: SortOrder;
+  onSort: (field: SortField) => void;
+}
+
+const SortableColumn: React.FC<SortableColumnProps> = ({ 
+  title, 
+  field, 
+  currentSort, 
+  currentOrder, 
+  onSort 
+}) => {
+  const isActive = currentSort === field;
+  
+  return (
+    <th 
+      className="text-left py-2 px-4 cursor-pointer hover:text-game-accent transition-colors"
+      onClick={() => onSort(field)}
+    >
+      <div className="flex items-center gap-2">
+        {title}
+        {isActive && currentOrder === 'asc' && <ArrowUpIcon className="w-4 h-4" />}
+        {isActive && currentOrder === 'desc' && <ArrowDownIcon className="w-4 h-4" />}
+      </div>
+    </th>
+  );
+};
+
 export default function AdminCards() {
   const router = useRouter();
   const [cards, setCards] = useState<Card[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(null);
+
+  const fetchCards = async (sort?: SortField, order?: SortOrder) => {
+    try {
+      setIsLoading(true);
+      const params = new URLSearchParams();
+      if (sort) params.append('sort', sort);
+      if (order) params.append('order', order);
+
+      const response = await fetch(`/api/admin/cards?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des cartes');
+      }
+      const data = await response.json();
+      setCards(data);
+    } catch (error) {
+      console.error('Erreur:', error);
+      toast.error('Erreur lors du chargement des cartes');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCards = async () => {
-      try {
-        const response = await fetch('/api/admin/cards');
-        if (!response.ok) {
-          throw new Error('Erreur lors de la récupération des cartes');
-        }
-        const data = await response.json();
-        setCards(data);
-      } catch (error) {
-        console.error('Erreur:', error);
-        toast.error('Erreur lors du chargement des cartes');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    fetchCards(sortField, sortOrder);
+  }, [sortField, sortOrder]);
 
-    fetchCards();
-  }, []);
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortOrder === 'asc') {
+        setSortOrder('desc');
+      } else if (sortOrder === 'desc') {
+        setSortField(null);
+        setSortOrder(null);
+      }
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
@@ -62,7 +117,7 @@ export default function AdminCards() {
 
       toast.success('Carte supprimée avec succès');
       // Mettre à jour la liste des cartes
-      setCards(cards.filter(card => card.id !== cardId));
+      fetchCards(sortField, sortOrder);
     } catch (error) {
       console.error('Erreur:', error);
       toast.error('Erreur lors de la suppression de la carte');
@@ -89,13 +144,22 @@ export default function AdminCards() {
           title="Administration des cartes"
           tooltip="Gérez toutes les cartes du jeu. Créez, modifiez ou supprimez des cartes et leurs caractéristiques."
         />
-        <button
-          onClick={() => router.push('/admin/cards/create')}
-          className="flex items-center gap-2 px-4 py-2 bg-game-accent text-white rounded-lg hover:bg-game-accent/80 transition-colors"
-        >
-          <PlusIcon className="h-4 w-4" />
-          Nouvelle carte
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push('/admin')}
+            className="game-button-secondary flex items-center gap-2"
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+            Retour
+          </button>
+          <button
+            onClick={() => router.push('/admin/cards/create')}
+            className="flex items-center gap-2 px-4 py-2 bg-game-accent text-white rounded-lg hover:bg-game-accent/80 transition-colors"
+          >
+            <PlusIcon className="h-4 w-4" />
+            Nouvelle carte
+          </button>
+        </div>
       </div>
 
       <div className="game-panel p-6">
@@ -104,9 +168,27 @@ export default function AdminCards() {
             <thead>
               <tr className="border-b border-game-accent/20">
                 <th className="text-left py-2 px-4">Image</th>
-                <th className="text-left py-2 px-4">Nom</th>
-                <th className="text-left py-2 px-4">Rareté</th>
-                <th className="text-left py-2 px-4">Puissance</th>
+                <SortableColumn
+                  title="Nom"
+                  field="name"
+                  currentSort={sortField}
+                  currentOrder={sortOrder}
+                  onSort={handleSort}
+                />
+                <SortableColumn
+                  title="Rareté"
+                  field="rarity"
+                  currentSort={sortField}
+                  currentOrder={sortOrder}
+                  onSort={handleSort}
+                />
+                <SortableColumn
+                  title="Puissance"
+                  field="power"
+                  currentSort={sortField}
+                  currentOrder={sortOrder}
+                  onSort={handleSort}
+                />
                 <th className="text-left py-2 px-4">Actions</th>
               </tr>
             </thead>
@@ -134,20 +216,20 @@ export default function AdminCards() {
                       {card.rarity}
                     </span>
                   </td>
-                  <td className="py-2 px-4">
-                    <span className="font-medium">{card.power}</span>
-                  </td>
+                  <td className="py-2 px-4">{card.power}</td>
                   <td className="py-2 px-4">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => router.push(`/admin/cards/${card.id}/edit`)}
-                        className="p-2 text-game-text hover:text-game-accent hover:bg-game-dark rounded-lg transition-colors"
+                        className="p-2 hover:bg-game-accent/10 rounded-lg transition-colors"
+                        title="Modifier"
                       >
                         <Pencil1Icon className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(card.id)}
-                        className="p-2 text-game-text hover:text-red-500 hover:bg-game-dark rounded-lg transition-colors"
+                        className="p-2 hover:bg-game-error/10 text-game-error rounded-lg transition-colors"
+                        title="Supprimer"
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>

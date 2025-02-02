@@ -1,84 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { CardProps } from '../components/Card';
 import { toast } from 'sonner';
+import { TradeStatus } from '@prisma/client';
 import PageTitleTooltip from '../components/PageTitleTooltip';
-
-type TradeStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
-
-interface TradeCard {
-  id: number;
-  cardId: number;
-  isShiny: boolean;
-  quantity: number;
-  card: Omit<CardProps, 'quote'> & {
-    quote?: string;
-  };
-}
-
-interface Trade {
-  id: number;
-  initiatorId: number;
-  recipientId: number;
-  status: TradeStatus;
-  message?: string;
-  expiresAt: Date;
-  createdAt: Date;
-  initiator: {
-    username: string;
-  };
-  recipient: {
-    username: string;
-  };
-  offeredCards: TradeCard[];
-  requestedCards: TradeCard[];
-}
-
-interface ApiTradeResponse {
-  id: number;
-  initiatorId: number;
-  recipientId: number;
-  status: string;
-  message?: string;
-  expiresAt: string;
-  createdAt: string;
-  initiator: {
-    username: string;
-  };
-  recipient: {
-    username: string;
-  };
-  offeredCards: {
-    id: number;
-    cardId: number;
-    isShiny: boolean;
-    quantity: number;
-    card: {
-      id: number;
-      name: string;
-      rarity: string;
-      description: string;
-      power: number;
-      imageUrl: string;
-      quote?: string;
-    };
-  }[];
-  requestedCards: {
-    id: number;
-    cardId: number;
-    isShiny: boolean;
-    quantity: number;
-    card: {
-      id: number;
-      name: string;
-      rarity: string;
-      description: string;
-      power: number;
-      imageUrl: string;
-      quote?: string;
-    };
-  }[];
-}
+import { Trade, ApiTradeResponse } from '../schemas';
 
 const TradesPage = () => {
   const { data: session } = useSession();
@@ -159,45 +84,63 @@ const TradesPage = () => {
 
   const handleAcceptTrade = async (tradeId: number) => {
     try {
-      const response = await fetch(`/api/trades/${tradeId}/accept`, {
+      const response = await fetch(`/api/trades/respond`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tradeOfferId: tradeId,
+          accept: true
+        }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'acceptation de l\'échange');
+        throw new Error(data.message || 'Erreur lors de l\'acceptation de l\'échange');
       }
 
       toast.success('Échange accepté avec succès !');
       // Rafraîchir la liste des échanges
       const updatedTrades = trades.map(trade =>
-        trade.id === tradeId ? { ...trade, status: 'ACCEPTED' } : trade
+        trade.id === tradeId ? { ...trade, status: TradeStatus.ACCEPTED } : trade
       );
       setTrades(updatedTrades);
     } catch (error) {
       console.error('Erreur lors de l\'acceptation de l\'échange:', error);
-      toast.error('Erreur lors de l\'acceptation de l\'échange');
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'acceptation de l\'échange');
     }
   };
 
   const handleRejectTrade = async (tradeId: number) => {
     try {
-      const response = await fetch(`/api/trades/${tradeId}/reject`, {
+      const response = await fetch(`/api/trades/respond`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tradeOfferId: tradeId,
+          accept: false
+        }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Erreur lors du refus de l\'échange');
+        throw new Error(data.message || 'Erreur lors du refus de l\'échange');
       }
 
       toast.success('Échange refusé');
       // Rafraîchir la liste des échanges
       const updatedTrades = trades.map(trade =>
-        trade.id === tradeId ? { ...trade, status: 'REJECTED' } : trade
+        trade.id === tradeId ? { ...trade, status: TradeStatus.REJECTED } : trade
       );
       setTrades(updatedTrades);
     } catch (error) {
       console.error('Erreur lors du refus de l\'échange:', error);
-      toast.error('Erreur lors du refus de l\'échange');
+      toast.error(error instanceof Error ? error.message : 'Erreur lors du refus de l\'échange');
     }
   };
 

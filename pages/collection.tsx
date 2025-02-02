@@ -82,6 +82,31 @@ const Collection: React.FC = () => {
     fetchSettings();
   }, []);
 
+  useEffect(() => {
+    const checkDailyReward = async () => {
+      if (!session?.user) return;
+
+      try {
+        const response = await fetch('/api/daily-reward', {
+          method: 'POST',
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          toast.success(data.message, {
+            description: `Revenez demain pour recevoir plus de crédits !`,
+          });
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de la récompense quotidienne:', error);
+      }
+    };
+
+    if (session?.user) {
+      checkDailyReward();
+    }
+  }, [session]);
+
   const handleCardHover = async (cardId: number, isShiny: boolean) => {
     if (!session?.user) return;
 

@@ -1,30 +1,9 @@
 import { useState } from 'react';
-import { Card as CardType, Rarity } from '@prisma/client';
+import { Card as CardType } from '@prisma/client';
 import Card from './Card';
 import Modal from './Modal';
 import RarityFilters from './RarityFilters';
-
-interface TradeModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  userCards: {
-    card: CardType;
-    isShiny: boolean;
-    quantity: number;
-  }[];
-  recipientCards: {
-    card: CardType;
-    isShiny: boolean;
-    quantity: number;
-  }[];
-  recipientId: number;
-  onSubmit: (data: {
-    recipientId: number;
-    offeredCards: { cardId: number; isShiny: boolean; quantity: number }[];
-    requestedCards: { cardId: number; isShiny: boolean; quantity: number }[];
-    message?: string;
-  }) => void;
-}
+import { TradeModalProps } from '../schemas/components';
 
 const TradeModal: React.FC<TradeModalProps> = ({
   isOpen,
@@ -32,7 +11,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
   userCards,
   recipientCards,
   recipientId,
-  onSubmit,
+  onSubmit
 }) => {
   const [selectedOfferedCards, setSelectedOfferedCards] = useState<{
     [key: string]: number;

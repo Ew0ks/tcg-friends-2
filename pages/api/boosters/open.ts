@@ -1,226 +1,242 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient, Rarity, BoosterType, Card, GameSettingKey, GameSettings } from '@prisma/client';
+import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
+import prisma from '../../../lib/prisma';
+import { Card, Rarity, BoosterType } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
-interface GeneratedCard {
-  card: Card;
+interface GeneratedCard extends Card {
   isShiny: boolean;
-}
-
-// Poids pour la génération aléatoire des raretés
-const BASE_RARITY_WEIGHTS = {
-  [Rarity.COMMON]: 70,
-  [Rarity.UNCOMMON]: 20,
-  [Rarity.RARE]: 8,
-  [Rarity.EPIC]: 1.5,
-  [Rarity.LEGENDARY]: 0.5,
-};
-
-// Chance d'obtenir une carte en version shiny
-const SHINY_CHANCE = 0.05;
-
-// Fonction pour vérifier si le boost est actif
-async function isBoostActive(): Promise<boolean> {
-  const settings = await prisma.gameSettings.findMany({
-    where: {
-      key: {
-        in: [
-          GameSettingKey.BOOST_DROP_RATE_ENABLED,
-          GameSettingKey.BOOST_DROP_RATE_START,
-          GameSettingKey.BOOST_DROP_RATE_END,
-        ],
-      },
-    },
-  });
-
-  const enabled = settings.find((s: GameSettings) => s.key === GameSettingKey.BOOST_DROP_RATE_ENABLED)?.value === 'true';
-  if (!enabled) return false;
-
-  const startDate = new Date(settings.find((s: GameSettings) => s.key === GameSettingKey.BOOST_DROP_RATE_START)?.value || '');
-  const endDate = new Date(settings.find((s: GameSettings) => s.key === GameSettingKey.BOOST_DROP_RATE_END)?.value || '');
-  const now = new Date();
-
-  return now >= startDate && now <= endDate;
-}
-
-// Fonction pour obtenir les poids de rareté actuels
-async function getCurrentRarityWeights(): Promise<typeof BASE_RARITY_WEIGHTS> {
-  const isBoost = await isBoostActive();
-  
-  if (!isBoost) return BASE_RARITY_WEIGHTS;
-
-  // Doubler les chances pour toutes les cartes non communes
-  return {
-    [Rarity.COMMON]: BASE_RARITY_WEIGHTS[Rarity.COMMON],
-    [Rarity.UNCOMMON]: BASE_RARITY_WEIGHTS[Rarity.UNCOMMON] * 2,
-    [Rarity.RARE]: BASE_RARITY_WEIGHTS[Rarity.RARE] * 2,
-    [Rarity.EPIC]: BASE_RARITY_WEIGHTS[Rarity.EPIC] * 2,
-    [Rarity.LEGENDARY]: BASE_RARITY_WEIGHTS[Rarity.LEGENDARY] * 2,
-  };
-}
-
-// Fonction pour déterminer une rareté aléatoire
-async function getRandomRarity(boosterType?: BoosterType): Promise<Rarity> {
-  // Logique spéciale pour le booster épique
-  if (boosterType === BoosterType.EPIC) {
-    const roll = Math.random();
-    if (roll < 0.05) return Rarity.LEGENDARY;
-    if (roll < 0.50) return Rarity.EPIC;
-    // Pour les 50% restants, on utilise la distribution normale
-  }
-
-  const weights = await getCurrentRarityWeights();
-  const total = Object.values(weights).reduce((a, b) => a + b, 0);
-  let random = Math.random() * total;
-
-  // Pour les boosters standards, rares et maxi, on vérifie la rareté minimale
-  const minRarity = boosterType === BoosterType.RARE || boosterType === BoosterType.MAXI ? Rarity.RARE :
-                   boosterType === BoosterType.STANDARD ? Rarity.UNCOMMON :
-                   undefined;
-
-  for (const [rarity, weight] of Object.entries(weights)) {
-    if (minRarity && rarity < minRarity) continue;
-    random -= weight;
-    if (random <= 0) return rarity as Rarity;
-  }
-
-  return Rarity.COMMON;
-}
-
-// Fonction pour récupérer une carte aléatoire d'une rareté donnée
-async function getRandomCard(rarity: Rarity): Promise<Card> {
-  const cards = await prisma.card.findMany({
-    where: { rarity },
-  });
-
-  if (cards.length === 0) {
-    throw new Error(`Aucune carte de rareté ${rarity} trouvée`);
-  }
-
-  return cards[Math.floor(Math.random() * cards.length)];
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
+    return res.status(405).json({ error: 'Méthode non autorisée' });
   }
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
     if (!session?.user?.id) {
-      return res.status(401).json({ message: 'Non authentifié' });
+      return res.status(401).json({ error: 'Non autorisé' });
     }
 
-    const { type } = req.body;
-    if (!type || !Object.values(BoosterType).includes(type)) {
-      return res.status(400).json({ message: 'Type de booster invalide' });
+    // Validation du boosterId
+    const { boosterId } = req.body;
+    if (!boosterId || typeof boosterId !== 'number') {
+      return res.status(400).json({ error: 'ID du booster invalide' });
     }
 
     // Récupérer la configuration du booster
     const boosterConfig = await prisma.boosterConfig.findUnique({
-      where: { type },
+      where: { id: boosterId },
     });
 
     if (!boosterConfig) {
-      return res.status(404).json({ message: 'Configuration de booster non trouvée' });
+      return res.status(404).json({ error: 'Configuration du booster non trouvée' });
     }
 
-    // Vérifier les crédits de l'utilisateur
+    // Vérifier que l'utilisateur a assez de crédits
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
+      select: { credits: true },
     });
 
     if (!user) {
-      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
 
     if (user.credits < boosterConfig.cost) {
-      return res.status(400).json({ message: 'Crédits insuffisants' });
+      return res.status(400).json({ error: 'Crédits insuffisants' });
     }
 
-    // Générer les cartes selon le type de booster
-    const cards: GeneratedCard[] = [];
+    // Générer les cartes selon les règles du booster
+    const cards = await generateCards(boosterConfig);
 
-    // Générer les cartes
-    for (let i = 0; i < boosterConfig.cardCount; i++) {
-      const rarity = await getRandomRarity(type);
-      const card = await getRandomCard(rarity);
-      const isShiny = Math.random() < SHINY_CHANCE;
-      cards.push({ card, isShiny });
-    }
-
-    // Mettre à jour les statistiques de l'utilisateur
-    const legendaryCount = cards.filter(c => c.card.rarity === Rarity.LEGENDARY).length;
-    const shinyCount = cards.filter(c => c.isShiny).length;
-
-    // Créer l'achat du booster et les cartes obtenues dans une transaction
-    const result = await prisma.$transaction(async (prisma) => {
-      // Créer l'achat du booster
-      const boosterPurchase = await prisma.boosterPurchase.create({
-        data: {
-          userId: session.user.id,
-          type,
-          cost: boosterConfig.cost,
+    // Créer l'achat du booster
+    const boosterPurchase = await prisma.boosterPurchase.create({
+      data: {
+        userId: session.user.id,
+        type: boosterConfig.type,
+        cost: boosterConfig.cost,
+        cards: {
+          create: cards.map(card => ({
+            cardId: card.id,
+            isShiny: card.isShiny,
+          })),
         },
-      });
+      },
+    });
 
-      // Ajouter les cartes à la collection de l'utilisateur
-      const cardPromises = cards.map(({ card, isShiny }) =>
-        prisma.collectedCard.upsert({
-          where: {
-            userId_cardId_isShiny: {
-              userId: session.user.id,
-              cardId: card.id,
-              isShiny,
-            },
-          },
-          update: {
-            quantity: {
-              increment: 1,
-            },
-          },
-          create: {
+    // Mettre à jour ou créer les cartes dans la collection
+    const collectionUpdates = cards.map(card => 
+      prisma.collectedCard.upsert({
+        where: {
+          userId_cardId_isShiny: {
             userId: session.user.id,
             cardId: card.id,
-            isShiny,
-            quantity: 1,
-            isNew: true,
+            isShiny: card.isShiny,
           },
-        })
-      );
+        },
+        update: {
+          quantity: { increment: 1 },
+          isNew: true,
+        },
+        create: {
+          userId: session.user.id,
+          cardId: card.id,
+          isShiny: card.isShiny,
+          isNew: true,
+          quantity: 1,
+        },
+      })
+    );
 
-      await Promise.all(cardPromises);
+    // Mettre à jour les crédits de l'utilisateur
+    const creditUpdate = prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        credits: { decrement: boosterConfig.cost },
+        totalBoostersOpened: { increment: 1 },
+      },
+    });
 
-      // Mettre à jour les crédits et statistiques de l'utilisateur
+    // Exécuter toutes les opérations dans une transaction
+    const [updatedUser] = await prisma.$transaction([
+      creditUpdate,
+      ...collectionUpdates,
+    ]);
+
+    // Mettre à jour les statistiques si des cartes légendaires ou shiny ont été trouvées
+    const legendaryCount = cards.filter(card => card.rarity === 'LEGENDARY').length;
+    const shinyCount = cards.filter(card => card.isShiny).length;
+
+    if (legendaryCount > 0 || shinyCount > 0) {
       await prisma.user.update({
         where: { id: session.user.id },
         data: {
-          credits: {
-            decrement: boosterConfig.cost,
-          },
-          totalBoostersOpened: {
-            increment: 1,
-          },
-          legendaryCardsFound: {
-            increment: legendaryCount,
-          },
-          shinyCardsFound: {
-            increment: shinyCount,
-          },
+          legendaryCardsFound: { increment: legendaryCount },
+          shinyCardsFound: { increment: shinyCount },
         },
       });
+    }
 
-      return { boosterPurchase, cards };
+    return res.status(200).json({
+      cards,
+      credits: updatedUser.credits,
     });
-
-    return res.status(200).json(result);
   } catch (error) {
     console.error('Erreur lors de l\'ouverture du booster:', error);
-    return res.status(500).json({ message: 'Erreur interne du serveur' });
+    return res.status(500).json({ error: 'Erreur lors de l\'ouverture du booster' });
+  }
+}
+
+async function generateCards(boosterConfig: { type: BoosterType; cardCount: number }): Promise<GeneratedCard[]> {
+  const cards: GeneratedCard[] = [];
+  const allCards = await prisma.card.findMany();
+
+  // Fonction pour obtenir une carte aléatoire selon la rareté
+  const getRandomCard = (rarity: Rarity): Card => {
+    const cardsOfRarity = allCards.filter(card => card.rarity === rarity);
+    if (cardsOfRarity.length === 0) {
+      throw new Error(`Aucune carte de rareté ${rarity} trouvée`);
+    }
+    return cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)];
+  };
+
+  // Fonction pour déterminer si une carte est shiny (5% de chance)
+  const isShiny = (): boolean => Math.random() < 0.05;
+
+  try {
+    // Générer les cartes selon le type de booster
+    switch (boosterConfig.type) {
+      case BoosterType.EPIC:
+        // Première carte avec les probabilités : 45% normal, 50% épique, 5% légendaire
+        const rand = Math.random();
+        let firstCard;
+        if (rand < 0.45) {
+          // 45% de chance d'avoir une carte normale (COMMON à RARE)
+          const normalRand = Math.random();
+          if (normalRand < 0.6) {
+            firstCard = getRandomCard('COMMON');
+          } else if (normalRand < 0.9) {
+            firstCard = getRandomCard('UNCOMMON');
+          } else {
+            firstCard = getRandomCard('RARE');
+          }
+        } else if (rand < 0.95) {
+          // 50% de chance d'avoir une épique
+          firstCard = getRandomCard('EPIC');
+        } else {
+          // 5% de chance d'avoir une légendaire
+          firstCard = getRandomCard('LEGENDARY');
+        }
+        cards.push({
+          ...firstCard,
+          isShiny: isShiny(),
+        });
+
+        // Cartes supplémentaires
+        for (let i = 1; i < boosterConfig.cardCount; i++) {
+          const card = getRandomCard('COMMON');
+          cards.push({
+            ...card,
+            isShiny: isShiny(),
+          });
+        }
+        break;
+
+      case BoosterType.RARE:
+        // Une carte rare garantie
+        cards.push({
+          ...getRandomCard('RARE'),
+          isShiny: isShiny(),
+        });
+        // Cartes supplémentaires
+        for (let i = 1; i < boosterConfig.cardCount; i++) {
+          const card = getRandomCard('COMMON');
+          cards.push({
+            ...card,
+            isShiny: isShiny(),
+          });
+        }
+        break;
+
+      case BoosterType.STANDARD:
+        // Une carte peu commune garantie
+        cards.push({
+          ...getRandomCard('UNCOMMON'),
+          isShiny: isShiny(),
+        });
+        // Cartes supplémentaires
+        for (let i = 1; i < boosterConfig.cardCount; i++) {
+          const card = getRandomCard('COMMON');
+          cards.push({
+            ...card,
+            isShiny: isShiny(),
+          });
+        }
+        break;
+
+      case BoosterType.MAXI:
+        // Une carte rare garantie et plus de cartes
+        cards.push({
+          ...getRandomCard('RARE'),
+          isShiny: isShiny(),
+        });
+        // Cartes supplémentaires avec meilleur taux de rareté
+        for (let i = 1; i < boosterConfig.cardCount; i++) {
+          const rarity = Math.random() < 0.3 ? 'UNCOMMON' : 'COMMON';
+          const card = getRandomCard(rarity as Rarity);
+          cards.push({
+            ...card,
+            isShiny: isShiny(),
+          });
+        }
+        break;
+    }
+
+    return cards;
+  } catch (error) {
+    console.error('Erreur lors de la génération des cartes:', error);
+    throw new Error('Erreur lors de la génération des cartes');
   }
 } 

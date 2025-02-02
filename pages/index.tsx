@@ -1,34 +1,9 @@
-import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
 import Link from 'next/link';
 import PageTitleTooltip from '../components/PageTitleTooltip';
 
 export default function Home() {
   const { data: session } = useSession();
-
-  useEffect(() => {
-    const checkDailyReward = async () => {
-      if (!session?.user) return;
-
-      try {
-        const response = await fetch('/api/daily-reward', {
-          method: 'POST',
-        });
-        const data = await response.json();
-
-        if (response.ok) {
-          toast.success(data.message, {
-            description: `Revenez demain pour recevoir plus de crédits !`,
-          });
-        }
-      } catch (error) {
-        console.error('Erreur lors de la vérification de la récompense quotidienne:', error);
-      }
-    };
-
-    checkDailyReward();
-  }, [session]);
 
   return (
     <div className="max-w-7xl mx-auto p-6">

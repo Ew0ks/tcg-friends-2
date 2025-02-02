@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { toast } from 'sonner';
 import { UserRole } from '@prisma/client';
 import { useGlobalSession } from '../../hooks/useGlobalSession';
-import { Cross2Icon, MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { Cross2Icon, MinusCircledIcon, PlusCircledIcon, ArrowLeftIcon } from '@radix-ui/react-icons';
 import PageTitleTooltip from '../../components/PageTitleTooltip';
 
 type GameSettingKey = 'DAILY_REWARD_AMOUNT';
@@ -210,11 +210,19 @@ export default function AdminSettings() {
 
   return (
     <div className="container mx-auto p-8">
-      <PageTitleTooltip 
-        title="Configuration"
-        tooltip="Gérez les paramètres globaux du jeu, les périodes de boost et d'autres configurations avancées. Ces options sont réservées aux administrateurs."
-        className="mb-8"
-      />
+      <div className="flex justify-between items-center mb-8">
+        <PageTitleTooltip 
+          title="Configuration"
+          tooltip="Gérez les paramètres globaux du jeu, les périodes de boost et d'autres configurations avancées. Ces options sont réservées aux administrateurs."
+        />
+        <button
+          onClick={() => router.push('/admin')}
+          className="game-button-secondary flex items-center gap-2"
+        >
+          <ArrowLeftIcon className="w-4 h-4" />
+          Retour
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Paramètres généraux */}

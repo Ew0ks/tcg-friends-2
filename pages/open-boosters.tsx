@@ -9,6 +9,7 @@ interface Booster {
   type: BoosterType;
   cost: number;
   cardCount: number;
+  id: number;
 }
 
 interface OpenedCard {
@@ -86,62 +87,41 @@ const OpenBoosters: React.FC = () => {
     fetchBoosters();
   }, []);
 
-  const handleOpenBooster = async (type: BoosterType) => {
-    if (!session?.user) return;
-
+  const handleOpenBooster = async (booster: Booster) => {
     try {
-      const booster = boosters.find(b => b.type === type);
-      if (!booster) return;
-
-      const res = await fetch('/api/boosters/open', {
+      const response = await fetch('/api/boosters/open', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
         },
-        body: JSON.stringify({
-          type,
-        }),
+        body: JSON.stringify({ boosterId: booster.id }),
       });
 
-      if (!res.ok) {
-        throw new Error('Erreur lors de l\'ouverture du booster');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de l\'ouverture du booster');
       }
 
-      const data = await res.json();
-      
-      // Notification en fonction de la rareté des cartes obtenues
-      const hasLegendary = data.cards.some((cardData: { card: OpenedCard; isShiny: boolean }) => cardData.card.rarity === 'LEGENDARY');
-      const hasShiny = data.cards.some((cardData: { card: OpenedCard; isShiny: boolean }) => cardData.isShiny);
-      
-      if (hasLegendary && hasShiny) {
-        toast.success('🌟 Incroyable ! Une carte légendaire shiny !', { duration: 5000 });
-      } else if (hasLegendary) {
-        toast.success('✨ Félicitations ! Une carte légendaire !', { duration: 5000 });
-      } else if (hasShiny) {
-        toast.success('✨ Une carte shiny !', { duration: 3000 });
-      } else {
-        toast.success('Booster ouvert avec succès !');
-      }
-      
-      // Traitement des cartes obtenues
-      const processedCards = data.cards.map((cardData: { card: OpenedCard; isShiny: boolean }) => ({
-        ...cardData.card,
-        isShiny: cardData.isShiny,
-      }));
-      
-      // Mettre à jour les crédits localement
-      const newCredits = currentCredits - booster.cost;
-      setCurrentCredits(newCredits);
-      
-      // Afficher les cartes dans le modal
-      setOpenedCards(processedCards);
+      setOpenedCards(data.cards);
+      setCurrentCredits(data.credits);
+
+      // Notifications pour les cartes rares
+      data.cards.forEach((card: OpenedCard) => {
+        if (card.rarity === 'LEGENDARY' || card.isShiny) {
+          toast.success(
+            `Félicitations ! ${card.isShiny ? 'Carte Shiny !' : 'Carte Légendaire !'}`,
+            {
+              description: card.name,
+            }
+          );
+        }
+      });
+
       setIsModalOpen(true);
-
     } catch (error) {
       console.error('Erreur lors de l\'ouverture du booster:', error);
-      toast.error('Erreur lors de l\'ouverture du booster');
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'ouverture du booster');
     }
   };
 
@@ -222,7 +202,7 @@ const OpenBoosters: React.FC = () => {
                 </div>
               </div>
               <button
-                onClick={() => handleOpenBooster(booster.type)}
+                onClick={() => handleOpenBooster(booster)}
                 className={`game-button w-full mt-auto ${!canAfford ? 'cursor-not-allowed' : ''}`}
                 disabled={!session?.user || !canAfford}
               >

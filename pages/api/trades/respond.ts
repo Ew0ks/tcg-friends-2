@@ -4,6 +4,130 @@ import prisma from '../../../lib/prisma';
 import { TradeStatus } from '@prisma/client';
 import { authOptions } from '../auth/[...nextauth]';
 
+async function logCollection(userId: number, message: string) {
+  const collection = await prisma.collectedCard.findMany({
+    where: { userId },
+    include: { card: true }
+  });
+  console.log(`${message}:`, {
+    userId,
+    cards: collection.map(c => ({
+      cardId: c.cardId,
+      cardName: c.card.name,
+      quantity: c.quantity,
+      isShiny: c.isShiny
+    }))
+  });
+}
+
+async function verifyCardAvailability(userId: number, cardId: number, isShiny: boolean, requiredQuantity: number): Promise<boolean> {
+  const card = await prisma.collectedCard.findFirst({
+    where: {
+      userId,
+      cardId,
+      isShiny,
+    }
+  });
+
+  return card !== null && card.quantity >= requiredQuantity;
+}
+
+async function transferCard(
+  tx: any,
+  fromUserId: number,
+  toUserId: number,
+  cardId: number,
+  isShiny: boolean,
+  quantity: number,
+  cardName: string
+) {
+  // 1. Vérifier et retirer les cartes du donneur
+  const fromCard = await tx.collectedCard.findFirst({
+    where: {
+      userId: fromUserId,
+      cardId,
+      isShiny,
+    }
+  });
+
+  if (!fromCard || fromCard.quantity < quantity) {
+    throw new Error(`Quantité insuffisante pour la carte ${cardName}`);
+  }
+
+  // 2. Mettre à jour ou supprimer la carte du donneur
+  if (fromCard.quantity === quantity) {
+    // Si toutes les cartes sont transférées, supprimer l'entrée
+    await tx.collectedCard.delete({
+      where: { id: fromCard.id }
+    });
+    console.log(`📤 Suppression complète de la carte pour l'utilisateur ${fromUserId}:`, {
+      cardId,
+      cardName,
+      isShiny
+    });
+  } else {
+    // Sinon, décrémenter la quantité
+    await tx.collectedCard.update({
+      where: { id: fromCard.id },
+      data: {
+        quantity: {
+          decrement: quantity
+        }
+      }
+    });
+    console.log(`📤 Décrémentation de ${quantity} cartes pour l'utilisateur ${fromUserId}:`, {
+      cardId,
+      cardName,
+      isShiny,
+      newQuantity: fromCard.quantity - quantity
+    });
+  }
+
+  // 3. Ajouter ou mettre à jour pour le receveur
+  const toCard = await tx.collectedCard.findFirst({
+    where: {
+      userId: toUserId,
+      cardId,
+      isShiny,
+    }
+  });
+
+  if (toCard) {
+    // Mettre à jour la quantité existante
+    await tx.collectedCard.update({
+      where: { id: toCard.id },
+      data: {
+        quantity: {
+          increment: quantity
+        }
+      }
+    });
+    console.log(`📥 Incrémentation de ${quantity} cartes pour l'utilisateur ${toUserId}:`, {
+      cardId,
+      cardName,
+      isShiny,
+      newQuantity: toCard.quantity + quantity
+    });
+  } else {
+    // Créer une nouvelle entrée
+    await tx.collectedCard.create({
+      data: {
+        userId: toUserId,
+        cardId,
+        isShiny,
+        quantity,
+        isNew: true
+      }
+    });
+    console.log(`📥 Création d'une nouvelle entrée pour l'utilisateur ${toUserId}:`, {
+      cardId,
+      cardName,
+      isShiny,
+      quantity
+    });
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Méthode non autorisée' });
@@ -16,9 +140,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { tradeOfferId, accept } = req.body;
-    console.log('Données reçues:', { tradeOfferId, accept, userId: session.user.id });
+    console.log('🚀 Début du traitement - Données reçues:', { tradeOfferId, accept, userId: session.user.id });
 
     if (tradeOfferId === undefined || accept === undefined) {
+      console.log('❌ Paramètres manquants');
       return res.status(400).json({ message: 'Paramètres manquants' });
     }
 
@@ -26,45 +151,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const tradeOffer = await prisma.tradeOffer.findUnique({
       where: { id: Number(tradeOfferId) },
       include: {
-        cards: true,
-        initiator: {
-          select: { username: true }
+        cards: {
+          include: {
+            card: true
+          }
         },
-        recipient: {
-          select: { username: true }
-        }
+        initiator: true,
+        recipient: true
       }
     });
 
-    console.log('Offre trouvée:', tradeOffer);
+    console.log('📦 Offre trouvée:', JSON.stringify(tradeOffer, null, 2));
 
     if (!tradeOffer) {
+      console.log('❌ Offre non trouvée');
       return res.status(404).json({ message: 'Offre d\'échange non trouvée' });
     }
 
-    if (tradeOffer.recipientId !== session.user.id) {
-      return res.status(403).json({ message: 'Vous n\'êtes pas le destinataire de cette offre' });
-    }
-
-    if (tradeOffer.status !== TradeStatus.PENDING) {
-      return res.status(400).json({ message: 'Cette offre n\'est plus en attente' });
-    }
-
-    if (new Date() > tradeOffer.expiresAt) {
-      await prisma.tradeOffer.update({
-        where: { id: Number(tradeOfferId) },
-        data: { status: TradeStatus.EXPIRED }
-      });
-      return res.status(400).json({ message: 'Cette offre a expiré' });
-    }
+    // Log des collections initiales
+    await logCollection(tradeOffer.initiatorId, '📊 Collection initiale de l\'initiateur');
+    await logCollection(tradeOffer.recipientId, '📊 Collection initiale du destinataire');
 
     if (!accept) {
-      // Rejeter l'offre
-      const rejectedTrade = await prisma.tradeOffer.update({
+      console.log('🚫 Rejet de l\'offre');
+      await prisma.tradeOffer.update({
         where: { id: Number(tradeOfferId) },
         data: { status: TradeStatus.REJECTED }
       });
-      console.log('Offre rejetée:', rejectedTrade);
       return res.status(200).json({ message: 'Offre rejetée' });
     }
 
@@ -72,152 +185,126 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const offeredCards = tradeOffer.cards.filter(card => card.isOffered);
     const requestedCards = tradeOffer.cards.filter(card => !card.isOffered);
 
-    const initiatorCards = await prisma.collectedCard.findMany({
-      where: {
-        userId: tradeOffer.initiatorId,
-        OR: offeredCards.map(card => ({
+    // Vérifier la disponibilité des cartes avant l'échange
+    for (const card of offeredCards) {
+      const isAvailable = await verifyCardAvailability(
+        tradeOffer.initiatorId,
+        card.cardId,
+        card.isShiny,
+        card.quantity
+      );
+      if (!isAvailable) {
+        console.log('❌ Carte non disponible:', {
           cardId: card.cardId,
+          cardName: card.card.name,
+          quantity: card.quantity,
           isShiny: card.isShiny,
-          quantity: {
-            gte: card.quantity
-          }
-        }))
+          userId: tradeOffer.initiatorId
+        });
+        await prisma.tradeOffer.update({
+          where: { id: Number(tradeOfferId) },
+          data: { status: TradeStatus.CANCELLED }
+        });
+        return res.status(400).json({ 
+          message: `L'initiateur ne possède plus assez d'exemplaires de la carte ${card.card.name}`
+        });
       }
-    });
-
-    const recipientCards = await prisma.collectedCard.findMany({
-      where: {
-        userId: tradeOffer.recipientId,
-        OR: requestedCards.map(card => ({
-          cardId: card.cardId,
-          isShiny: card.isShiny,
-          quantity: {
-            gte: card.quantity
-          }
-        }))
-      }
-    });
-
-    console.log('Vérification des cartes:', {
-      initiatorCardsFound: initiatorCards.length,
-      offeredCardsCount: offeredCards.length,
-      recipientCardsFound: recipientCards.length,
-      requestedCardsCount: requestedCards.length
-    });
-
-    if (initiatorCards.length !== offeredCards.length || 
-        recipientCards.length !== requestedCards.length) {
-      await prisma.tradeOffer.update({
-        where: { id: Number(tradeOfferId) },
-        data: { status: TradeStatus.CANCELLED }
-      });
-      return res.status(400).json({ message: 'Les cartes ne sont plus disponibles' });
     }
 
+    for (const card of requestedCards) {
+      const isAvailable = await verifyCardAvailability(
+        tradeOffer.recipientId,
+        card.cardId,
+        card.isShiny,
+        card.quantity
+      );
+      if (!isAvailable) {
+        console.log('❌ Carte non disponible:', {
+          cardId: card.cardId,
+          cardName: card.card.name,
+          quantity: card.quantity,
+          isShiny: card.isShiny,
+          userId: tradeOffer.recipientId
+        });
+        await prisma.tradeOffer.update({
+          where: { id: Number(tradeOfferId) },
+          data: { status: TradeStatus.CANCELLED }
+        });
+        return res.status(400).json({ 
+          message: `Le destinataire ne possède plus assez d'exemplaires de la carte ${card.card.name}`
+        });
+      }
+    }
+
+    console.log('🔄 Cartes à échanger:', {
+      offered: offeredCards.map(c => ({
+        cardId: c.cardId,
+        cardName: c.card.name,
+        quantity: c.quantity,
+        isShiny: c.isShiny
+      })),
+      requested: requestedCards.map(c => ({
+        cardId: c.cardId,
+        cardName: c.card.name,
+        quantity: c.quantity,
+        isShiny: c.isShiny
+      }))
+    });
+
     // Effectuer l'échange dans une transaction
-    const result = await prisma.$transaction(async (prisma) => {
-      // Transférer les cartes offertes
+    const result = await prisma.$transaction(async (tx) => {
+      console.log('🏁 Début de la transaction');
+
+      // Transférer les cartes offertes (de l'initiateur au destinataire)
       for (const card of offeredCards) {
-        await prisma.collectedCard.updateMany({
-          where: {
-            userId: tradeOffer.initiatorId,
-            cardId: card.cardId,
-            isShiny: card.isShiny,
-          },
-          data: {
-            quantity: {
-              decrement: card.quantity
-            }
-          }
-        });
-
-        const existingRecipientCard = await prisma.collectedCard.findFirst({
-          where: {
-            userId: tradeOffer.recipientId,
-            cardId: card.cardId,
-            isShiny: card.isShiny,
-          }
-        });
-
-        if (existingRecipientCard) {
-          await prisma.collectedCard.update({
-            where: { id: existingRecipientCard.id },
-            data: {
-              quantity: {
-                increment: card.quantity
-              }
-            }
-          });
-        } else {
-          await prisma.collectedCard.create({
-            data: {
-              userId: tradeOffer.recipientId,
-              cardId: card.cardId,
-              isShiny: card.isShiny,
-              quantity: card.quantity,
-              isNew: true
-            }
-          });
-        }
+        console.log(`\n🔄 Traitement de la carte ${card.card.name} (ID: ${card.cardId})`);
+        await transferCard(
+          tx,
+          tradeOffer.initiatorId,
+          tradeOffer.recipientId,
+          card.cardId,
+          card.isShiny,
+          card.quantity,
+          card.card.name
+        );
       }
 
-      // Transférer les cartes demandées
+      // Transférer les cartes demandées (du destinataire à l'initiateur)
       for (const card of requestedCards) {
-        await prisma.collectedCard.updateMany({
-          where: {
-            userId: tradeOffer.recipientId,
-            cardId: card.cardId,
-            isShiny: card.isShiny,
-          },
-          data: {
-            quantity: {
-              decrement: card.quantity
-            }
-          }
-        });
-
-        const existingInitiatorCard = await prisma.collectedCard.findFirst({
-          where: {
-            userId: tradeOffer.initiatorId,
-            cardId: card.cardId,
-            isShiny: card.isShiny,
-          }
-        });
-
-        if (existingInitiatorCard) {
-          await prisma.collectedCard.update({
-            where: { id: existingInitiatorCard.id },
-            data: {
-              quantity: {
-                increment: card.quantity
-              }
-            }
-          });
-        } else {
-          await prisma.collectedCard.create({
-            data: {
-              userId: tradeOffer.initiatorId,
-              cardId: card.cardId,
-              isShiny: card.isShiny,
-              quantity: card.quantity,
-              isNew: true
-            }
-          });
-        }
+        console.log(`\n🔄 Traitement de la carte ${card.card.name} (ID: ${card.cardId})`);
+        await transferCard(
+          tx,
+          tradeOffer.recipientId,
+          tradeOffer.initiatorId,
+          card.cardId,
+          card.isShiny,
+          card.quantity,
+          card.card.name
+        );
       }
 
       // Mettre à jour le statut de l'offre
-      return await prisma.tradeOffer.update({
+      console.log('✅ Finalisation de l\'échange');
+      return await tx.tradeOffer.update({
         where: { id: Number(tradeOfferId) },
         data: { status: TradeStatus.ACCEPTED }
       });
     });
 
-    console.log('Échange effectué avec succès:', result);
+    // Log des collections finales
+    await logCollection(tradeOffer.initiatorId, '📊 Collection finale de l\'initiateur');
+    await logCollection(tradeOffer.recipientId, '📊 Collection finale du destinataire');
+
+    console.log('✅ Échange terminé avec succès:', {
+      tradeId: result.id,
+      status: result.status
+    });
 
     res.status(200).json({ message: 'Échange effectué avec succès' });
   } catch (error) {
-    console.error('Erreur lors de la réponse à l\'offre d\'échange:', error);
-    res.status(500).json({ message: 'Erreur lors de la réponse à l\'offre d\'échange' });
+    console.error('❌ Erreur lors de l\'échange:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : 'Erreur lors de la réponse à l\'offre d\'échange'
+    });
   }
 } 

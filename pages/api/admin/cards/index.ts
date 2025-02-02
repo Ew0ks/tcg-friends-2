@@ -1,42 +1,49 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-
-const prisma = new PrismaClient();
+import prisma from '../../../../lib/prisma';
+import { UserRole } from '@prisma/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Méthode non autorisée' });
+  const session = await getServerSession(req, res, authOptions);
+
+  if (!session?.user || session.user.role !== UserRole.ADMIN) {
+    return res.status(403).json({ error: 'Accès refusé' });
   }
 
-  try {
-    const session = await getServerSession(req, res, authOptions);
-    
-    if (!session?.user?.id) {
-      return res.status(401).json({ message: 'Non autorisé' });
+  if (req.method === 'GET') {
+    try {
+      const { sort, order } = req.query;
+
+      let orderBy = {};
+
+      // Configuration du tri
+      if (sort && order) {
+        switch (sort) {
+          case 'name':
+          case 'rarity':
+          case 'power':
+            orderBy = {
+              [sort]: order === 'asc' ? 'asc' : 'desc'
+            };
+            break;
+          default:
+            orderBy = { id: 'asc' }; // Tri par défaut
+        }
+      } else {
+        orderBy = { id: 'asc' }; // Tri par défaut
+      }
+
+      const cards = await prisma.card.findMany({
+        orderBy,
+      });
+
+      return res.status(200).json(cards);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des cartes:', error);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des cartes' });
     }
-
-    // Vérifier que l'utilisateur est admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (!user || user.role !== 'ADMIN') {
-      return res.status(403).json({ message: 'Accès refusé' });
-    }
-
-    // Récupérer toutes les cartes
-    const cards = await prisma.card.findMany({
-      orderBy: [
-        { rarity: 'desc' },
-        { name: 'asc' }
-      ]
-    });
-
-    return res.status(200).json(cards);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des cartes:', error);
-    return res.status(500).json({ message: 'Erreur interne du serveur' });
   }
+
+  return res.status(405).json({ error: 'Méthode non autorisée' });
 } 
