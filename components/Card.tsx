@@ -42,7 +42,7 @@ const Card: React.FC<CardProps> = ({
   return (
     <div
       className={`
-        relative w-64 h-96 p-4 rounded-lg border-2 overflow-visible
+        relative w-52 h-80 p-3 rounded-lg border-2 overflow-visible
         ${isShiny ? 'animate-shine border-yellow-400' : 'border-game-muted'}
         ${getRarityStyle(rarity)}
         ${isNew && !hasHovered ? 'animate-pulse' : ''}
@@ -53,44 +53,44 @@ const Card: React.FC<CardProps> = ({
     >
       {/* Badge "Nouveau" */}
       {isNew && !hasHovered && (
-        <div className="absolute -top-3 -left-3 bg-game-success text-game-dark text-xs font-bold px-2 py-1 rounded-full transform -rotate-12 shadow-lg border border-game-dark">
+        <div className="absolute -top-2 -left-2 bg-game-success text-game-dark text-xs font-bold px-2 py-1 rounded-full transform -rotate-12 shadow-lg border border-game-dark">
           NOUVEAU !
         </div>
       )}
 
       {/* Bulle de puissance */}
-      <div className={`absolute -top-3 -right-3 w-10 h-10 rounded-full bg-game-accent flex items-center justify-center border-2 border-game-dark shadow-lg z-10 ${isShiny ? 'power-bubble-shine' : ''}`}>
-        <span className="text-lg font-bold text-game-dark">{power}</span>
+      <div className={`absolute -top-2 -right-2 w-8 h-8 rounded-full bg-game-accent flex items-center justify-center border-2 border-game-dark shadow-lg z-10 ${isShiny ? 'power-bubble-shine' : ''}`}>
+        <span className="text-base font-bold text-game-dark">{power}</span>
       </div>
 
-      <div className="w-full h-40 mb-2 overflow-hidden rounded-lg relative">
+      <div className="w-full h-32 mb-2 overflow-hidden rounded-lg relative">
         <Image
           src={imageUrl}
           alt={name}
-          width={256}
-          height={160}
+          width={208}
+          height={128}
           className="w-full h-full object-cover"
         />
       </div>
 
-      <div className="flex justify-between items-center mb-2">
-        <h3 className={`text-lg font-bold ${isShiny ? 'shiny-title' : ''}`}>{name}</h3>
+      <div className="flex justify-between items-center mb-1">
+        <h3 className={`text-base font-bold ${isShiny ? 'shiny-title' : ''}`}>{name}</h3>
       </div>
 
-      <p className="text-sm mb-2 h-16 overflow-y-auto">{description}</p>
+      <p className="text-xs mb-1 h-14 overflow-y-auto">{description}</p>
 
       {quote && (
-        <p className="text-sm italic text-game-muted mb-2 h-12 overflow-y-auto">
+        <p className="text-xs italic text-game-muted mb-1 h-10 overflow-y-auto">
           &ldquo;{quote}&rdquo;
         </p>
       )}
 
-      <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center">
+      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
         <span className={`text-xs ${getRarityTextColor(rarity)}`}>
           {isShiny && <span className="text-yellow-400 shiny-title">✨ Shiny - </span>}{rarity}
         </span>
         {quantity && quantity > 1 && (
-          <div className="absolute bottom-[-10px] right-[-10px] bg-game-accent text-white text-sm px-2 py-1 rounded-lg shadow-lg">
+          <div className="absolute bottom-[-8px] right-[-8px] bg-game-accent text-white text-xs px-2 py-1 rounded-lg shadow-lg">
             x{quantity}
           </div>
         )}
