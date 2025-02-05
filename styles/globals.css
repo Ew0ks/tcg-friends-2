@@ -141,3 +141,37 @@ p {
 .power-bubble-shine {
   animation: power-bubble-pulse 2s ease-in-out infinite;
 }
+
+/* Classe pour les modales */
+.modal-container {
+  @apply max-w-[100rem] mx-auto w-full;
+}
+
+.selected-card {
+  @apply relative;
+  &::after {
+    content: '';
+    @apply absolute inset-0 rounded-lg pointer-events-none;
+    animation: selected-card-shine 2s ease-in-out infinite;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 45%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.1) 55%,
+      transparent 100%
+    );
+  }
+}
+
+@keyframes selected-card-shine {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}

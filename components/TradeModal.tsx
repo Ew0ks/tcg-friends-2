@@ -4,6 +4,7 @@ import Card from './Card';
 import Modal from './Modal';
 import RarityFilters from './RarityFilters';
 import { TradeModalProps } from '../schemas/components';
+import { CARD_GRID_SCALE } from '../constants/cardDimensions';
 
 const TradeModal: React.FC<TradeModalProps> = ({
   isOpen,
@@ -138,7 +139,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
       maxWidth="full"
       footer={footer}
     >
-      <div className="flex flex-col gap-6">
+      <div className="modal-container flex flex-col gap-6">
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-game-accent">
@@ -149,7 +150,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
               onChange={setOfferedRarityFilter}
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-4 snap-x">
+          <div className="flex gap-8 overflow-x-auto pb-8 snap-x">
             {filteredUserCards.map(({ card, isShiny, quantity }) => {
               const key = `${card.id}-${isShiny}`;
               const selectedQuantity = selectedOfferedCards[key] || 0;
@@ -157,29 +158,19 @@ const TradeModal: React.FC<TradeModalProps> = ({
               return (
                 <div 
                   key={key} 
-                  className="relative group shrink-0 snap-start scale-50 hover:scale-55 -mx-12 -my-20 transition-all duration-200"
+                  className={`
+                    relative group shrink-0 snap-start ${CARD_GRID_SCALE.margin}
+                    ${selectedQuantity > 0 ? 'selected-card transform scale-[1.02] transition-all duration-300' : ''}
+                  `}
                 >
-                  <Card {...card} isShiny={isShiny} quantity={selectedQuantity} />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 flex gap-2">
-                      {selectedQuantity > 0 && (
-                        <button
-                          onClick={() => handleCardDeselection(card.id, isShiny, true)}
-                          className="bg-red-500 text-white px-3 py-1 rounded"
-                        >
-                          -
-                        </button>
-                      )}
-                      {selectedQuantity < quantity && (
-                        <button
-                          onClick={() => handleCardSelection(card.id, isShiny, quantity, true)}
-                          className="bg-green-500 text-white px-3 py-1 rounded"
-                        >
-                          +
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <Card 
+                    {...card} 
+                    isShiny={isShiny} 
+                    quantity={quantity}
+                    selectedQuantity={selectedQuantity}
+                    onIncrement={() => handleCardSelection(card.id, isShiny, quantity, true)}
+                    onDecrement={() => handleCardDeselection(card.id, isShiny, true)}
+                  />
                 </div>
               );
             })}
@@ -196,7 +187,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
               onChange={setRequestedRarityFilter}
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-4 snap-x">
+          <div className="flex gap-8 overflow-x-auto pb-8 snap-x">
             {filteredRecipientCards.map(({ card, isShiny, quantity }) => {
               const key = `${card.id}-${isShiny}`;
               const selectedQuantity = selectedRequestedCards[key] || 0;
@@ -204,29 +195,19 @@ const TradeModal: React.FC<TradeModalProps> = ({
               return (
                 <div 
                   key={key} 
-                  className="relative group shrink-0 snap-start scale-50 hover:scale-55 -mx-12 -my-20 transition-all duration-200"
+                  className={`
+                    relative group shrink-0 snap-start ${CARD_GRID_SCALE.margin}
+                    ${selectedQuantity > 0 ? 'selected-card transform scale-[1.02] transition-all duration-300' : ''}
+                  `}
                 >
-                  <Card {...card} isShiny={isShiny} quantity={selectedQuantity} />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 flex gap-2">
-                      {selectedQuantity > 0 && (
-                        <button
-                          onClick={() => handleCardDeselection(card.id, isShiny, false)}
-                          className="bg-red-500 text-white px-3 py-1 rounded"
-                        >
-                          -
-                        </button>
-                      )}
-                      {selectedQuantity < quantity && (
-                        <button
-                          onClick={() => handleCardSelection(card.id, isShiny, quantity, false)}
-                          className="bg-green-500 text-white px-3 py-1 rounded"
-                        >
-                          +
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <Card 
+                    {...card} 
+                    isShiny={isShiny} 
+                    quantity={quantity}
+                    selectedQuantity={selectedQuantity}
+                    onIncrement={() => handleCardSelection(card.id, isShiny, quantity, false)}
+                    onDecrement={() => handleCardDeselection(card.id, isShiny, false)}
+                  />
                 </div>
               );
             })}

@@ -5,6 +5,7 @@ import { Rarity } from '@prisma/client';
 import RarityFilters from '../components/RarityFilters';
 import { toast } from 'sonner';
 import PageTitleTooltip from '../components/PageTitleTooltip';
+import { CARD_GRID_SCALE } from '../constants/cardDimensions';
 
 // Définir le type pour une carte collectée
 interface CollectedCard {
@@ -266,11 +267,11 @@ const Collection: React.FC = () => {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8 p-4">
         {collectedCards.map((collectedCard) => (
           <div 
             key={`${collectedCard.card.id}-${collectedCard.isShiny}`} 
-            className="relative"
+            className={`relative flex justify-center ${CARD_GRID_SCALE.margin}`}
           >
             <Card
               {...collectedCard.card}

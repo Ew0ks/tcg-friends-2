@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Card, { CardProps } from './Card';
 import Modal from './Modal';
+import { CARD_DIMENSIONS, CARD_GRID_SCALE } from '../constants/cardDimensions';
 
 interface CardRevealModalProps {
   cards: CardProps[];
@@ -43,15 +44,15 @@ const CardRevealModal: React.FC<CardRevealModalProps> = ({ cards, isOpen, onClos
       maxWidth="full"
       footer={footer}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="modal-container grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {cards.map((card, index) => (
           <div 
             key={`${card.id}-${card.isShiny}-${index}`} 
-            className={`flex justify-center game-card ${revealedCards.has(index) ? 'flipped' : ''}`}
+            className={`flex justify-center game-card ${revealedCards.has(index) ? 'flipped' : ''} ${CARD_GRID_SCALE.margin}`}
             onClick={() => handleCardClick(index)}
           >
             <Card {...card} />
-            <div />
+            <div style={CARD_DIMENSIONS.style} />
           </div>
         ))}
       </div>

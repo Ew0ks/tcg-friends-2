@@ -3,6 +3,7 @@ import { Card as CardType, Rarity } from '@prisma/client';
 import Card from '../components/Card';
 import RarityFilters from '../components/RarityFilters';
 import PageTitleTooltip from '../components/PageTitleTooltip';
+import { CARD_GRID_SCALE } from '../constants/cardDimensions';
 
 interface LibraryCard extends CardType {
   isOwned: boolean;
@@ -93,7 +94,7 @@ const Library = () => {
         return (
           <div key={rarity} className="mb-12">
             <h2 className="text-2xl font-bold text-game-accent mb-6">{rarity}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
               {cardsByRarity[rarity].map((card) => {
                 const cardWithShiny: CardDisplayProps = {
                   ...card,
@@ -102,7 +103,7 @@ const Library = () => {
                   quote: card.quote || undefined
                 };
                 return (
-                  <div key={card.id} className="relative">
+                  <div key={card.id} className={`relative flex justify-center ${CARD_GRID_SCALE.margin}`}>
                     {(rarity !== 'LEGENDARY' || card.isOwned) && (
                       <div className={card.isOwned ? 'opacity-50' : ''}>
                         <Card {...cardWithShiny} />

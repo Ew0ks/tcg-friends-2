@@ -59,7 +59,7 @@ const SaleConfirmationModal = ({
       title="Confirmation de vente"
       footer={footerButtons}
     >
-      <div className="space-y-4">
+      <div className="modal-container space-y-4">
         <p className="text-game-text">
           Vous allez vendre :
         </p>

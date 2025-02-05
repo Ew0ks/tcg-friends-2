@@ -235,13 +235,15 @@ const UserCollectionPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {collection.cards.map((collectedCard) => (
-          <div key={`${collectedCard.card.id}-${collectedCard.isShiny}`} className="relative">
-            <Card {...collectedCard.card} isShiny={collectedCard.isShiny} />
-            {collectedCard.quantity > 1 && (
-              <div className="absolute bottom-[-10px] right-[10px] bg-game-accent text-white px-2 py-1 rounded">
-                x{collectedCard.quantity}
-              </div>
-            )}
+          <div 
+            key={`${collectedCard.card.id}-${collectedCard.isShiny}`} 
+            className="relative flex justify-center"
+          >
+            <Card 
+              {...collectedCard.card} 
+              isShiny={collectedCard.isShiny}
+              quantity={collectedCard.quantity}
+            />
           </div>
         ))}
 

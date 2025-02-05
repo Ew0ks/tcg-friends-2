@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Rarity } from '@prisma/client';
 import Image from 'next/image';
+import { CARD_DIMENSIONS } from '../constants/cardDimensions';
 
 export interface CardProps {
   id: number;
@@ -13,6 +14,9 @@ export interface CardProps {
   isNew?: boolean;
   imageUrl: string;
   quantity?: number;
+  selectedQuantity?: number;
+  onIncrement?: () => void;
+  onDecrement?: () => void;
   className?: string;
   onHover?: () => void;
 }
@@ -27,6 +31,9 @@ const Card: React.FC<CardProps> = ({
   isNew = false,
   imageUrl = '/images/cards/placeholder.webp',
   quantity,
+  selectedQuantity = 0,
+  onIncrement,
+  onDecrement,
   className = '',
   onHover,
 }) => {
@@ -42,12 +49,13 @@ const Card: React.FC<CardProps> = ({
   return (
     <div
       className={`
-        relative w-52 h-80 p-3 rounded-lg border-2 overflow-visible
+        relative w-full h-full ${CARD_DIMENSIONS.padding} rounded-lg border-2 overflow-visible
         ${isShiny ? 'animate-shine border-yellow-400' : 'border-game-muted'}
         ${getRarityStyle(rarity)}
         ${isNew && !hasHovered ? 'animate-pulse' : ''}
         ${className}
       `}
+      style={CARD_DIMENSIONS.style}
       data-shiny={isShiny}
       onMouseEnter={handleMouseEnter}
     >
@@ -63,12 +71,12 @@ const Card: React.FC<CardProps> = ({
         <span className="text-base font-bold text-game-dark">{power}</span>
       </div>
 
-      <div className="w-full h-32 mb-2 overflow-hidden rounded-lg relative">
+      <div className={`w-full ${CARD_DIMENSIONS.imageHeight} mb-2 overflow-hidden rounded-lg relative`}>
         <Image
           src={imageUrl}
           alt={name}
-          width={208}
-          height={128}
+          width={CARD_DIMENSIONS.imageWidth}
+          height={CARD_DIMENSIONS.nextImageHeight}
           className="w-full h-full object-cover"
         />
       </div>
@@ -77,24 +85,49 @@ const Card: React.FC<CardProps> = ({
         <h3 className={`text-base font-bold ${isShiny ? 'shiny-title' : ''}`}>{name}</h3>
       </div>
 
-      <p className="text-xs mb-1 h-14 overflow-y-auto">{description}</p>
+      <p className={`text-xs mb-1 ${CARD_DIMENSIONS.descriptionHeight} overflow-y-auto`}>{description}</p>
 
       {quote && (
-        <p className="text-xs italic text-game-muted mb-1 h-10 overflow-y-auto">
+        <p className={`text-xs italic text-game-muted mb-1 ${CARD_DIMENSIONS.quoteHeight} overflow-y-auto`}>
           &ldquo;{quote}&rdquo;
         </p>
       )}
 
-      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
-        <span className={`text-xs ${getRarityTextColor(rarity)}`}>
-          {isShiny && <span className="text-yellow-400 shiny-title">✨ Shiny - </span>}{rarity}
-        </span>
-        {quantity && quantity > 1 && (
-          <div className="absolute bottom-[-8px] right-[-8px] bg-game-accent text-white text-xs px-2 py-1 rounded-lg shadow-lg">
-            x{quantity}
+      {/* Affichage des quantités et boutons */}
+      {(onIncrement || onDecrement) && (
+        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-2">
+            {selectedQuantity > 0 && (
+              <>
+                <button
+                  onClick={onDecrement}
+                  className="bg-red-500 text-white px-3 py-1 rounded"
+                >
+                  -
+                </button>
+                <span className="bg-game-accent text-white px-3 py-1 rounded">
+                  {selectedQuantity}
+                </span>
+              </>
+            )}
+            {selectedQuantity < (quantity || 0) && onIncrement && (
+              <button
+                onClick={onIncrement}
+                className="bg-green-500 text-white px-3 py-1 rounded"
+              >
+                +
+              </button>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Affichage de la quantité totale */}
+      {quantity && quantity > 1 && (
+        <div className="absolute bottom-[-8px] right-[-8px] bg-game-accent text-white text-xs px-2 py-1 rounded-lg shadow-lg">
+          x{quantity}
+        </div>
+      )}
     </div>
   );
 };

@@ -47,7 +47,7 @@ const Modal = ({
       onClick={onClose}
     >
       <div 
-        className={`bg-game-dark rounded-lg shadow-xl ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200`}
+        className={`modal-container bg-game-dark rounded-lg shadow-xl ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200`}
         onClick={e => e.stopPropagation()}
       >
         {(title || closeButton) && (
